@@ -1,0 +1,3622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finshell Pay – Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #0A1628;
+    --accent: #00D4FF;
+    --accent2: #6C63FF;
+    --teal: #00B4D8;
+    --green: #00C48C;
+    --red: #FF4D6D;
+    --gold: #FFB800;
+    --surface: #111827;
+    --surface2: #1E2A3A;
+    --surface3: #243044;
+    --text: #F0F4FF;
+    --text2: #8A9BB5;
+    --text3: #B8C4D4;
+    --border: rgba(255,255,255,0.08);
+    --card: rgba(255,255,255,0.05);
+    --radius: 16px;
+    --radius-sm: 10px;
+    --font: 'Sora', sans-serif;
+    --font2: 'DM Sans', sans-serif;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    background: radial-gradient(ellipse at 30% 20%, #0d2040 0%, #050A14 60%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: var(--font);
+  }
+
+  /* Phone shell — scales to fit any viewport */
+  .phone-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  .phone-shell {
+    width: 393px;
+    height: 852px;
+    background: var(--primary);
+    border-radius: 50px;
+    overflow: hidden;
+    position: relative;
+    box-shadow:
+      0 0 0 2px rgba(255,255,255,0.12),
+      0 40px 120px rgba(0,212,255,0.15),
+      0 80px 200px rgba(0,0,0,0.8);
+    /* Scale down to fit viewport while keeping aspect ratio */
+    transform-origin: center center;
+    transform: scale(var(--phone-scale, 1));
+    flex-shrink: 0;
+  }
+
+  /* Screens */
+  .screen {
+    position: absolute;
+    inset: 0;
+    background: var(--primary);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .screen.active { display: flex; }
+
+  /* Status bar */
+  .status-bar {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    flex-shrink: 0;
+    font-family: var(--font2);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .status-icons { display: flex; gap: 6px; align-items: center; }
+
+  /* Scrollable content */
+  .scroll-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .scroll-content::-webkit-scrollbar { display: none; }
+
+  /* Bottom Nav */
+  .bottom-nav {
+    height: 78px;
+    background: rgba(17,24,39,0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 8px 12px;
+    flex-shrink: 0;
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 12px;
+    transition: all 0.2s;
+    min-width: 56px;
+  }
+  .nav-item.active .nav-icon { color: var(--accent); }
+  .nav-item.active .nav-label { color: var(--accent); }
+  .nav-item .nav-icon { font-size: 22px; color: var(--text2); transition: all 0.2s; }
+  .nav-item .nav-label { font-size: 10px; font-weight: 600; color: var(--text2); transition: all 0.2s; font-family: var(--font2); }
+  .nav-scan {
+    width: 52px; height: 52px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 4px 20px rgba(0,212,255,0.4);
+    cursor: pointer;
+    margin-top: -20px;
+    transition: transform 0.2s;
+  }
+  .nav-scan:active { transform: scale(0.95); }
+
+  /* Buttons */
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    padding: 16px 32px;
+    font-family: var(--font);
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.2s;
+    letter-spacing: 0.2px;
+  }
+  .btn-primary:active { transform: scale(0.98); opacity: 0.9; }
+
+  .btn-ghost {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 24px;
+    font-family: var(--font);
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.2s;
+  }
+
+  /* Back button */
+  .back-btn {
+    width: 36px; height: 36px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--text);
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .back-btn:active { transform: scale(0.9); }
+
+  /* Input */
+  .input-field {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: var(--font2);
+    font-size: 15px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-field:focus { border-color: var(--accent); }
+  .input-field::placeholder { color: var(--text2); }
+
+  /* Card */
+  .card {
+    background: var(--surface2);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 16px;
+  }
+
+  /* Section title */
+  .section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+
+  /* Tag */
+  .tag {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--font2);
+  }
+  .tag-green { background: rgba(0,196,140,0.15); color: var(--green); }
+  .tag-blue { background: rgba(0,212,255,0.15); color: var(--accent); }
+  .tag-gold { background: rgba(255,184,0,0.15); color: var(--gold); }
+  .tag-red { background: rgba(255,77,109,0.15); color: var(--red); }
+
+  /* Loading overlay */
+  .loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(10,22,40,0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    z-index: 100;
+  }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Animations */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+  @keyframes shimmer {
+    from { background-position: -200% 0; }
+    to { background-position: 200% 0; }
+  }
+
+  .fade-up { animation: fadeUp 0.4s ease forwards; }
+
+  /* =========== SCREEN STYLES =========== */
+
+  /* --- SPLASH --- */
+  #screen-splash {
+    background: linear-gradient(160deg, #050A14 0%, #0A1628 50%, #0D1F3C 100%);
+    justify-content: center;
+    align-items: center;
+    gap: 0;
+  }
+  .splash-logo {
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+    animation: fadeUp 0.8s ease;
+  }
+  .splash-icon {
+    width: 100px; height: 100px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 28px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 48px;
+    box-shadow: 0 20px 60px rgba(0,212,255,0.3);
+    animation: pulse 2s infinite;
+  }
+  .splash-title { font-size: 32px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
+  .splash-sub { font-size: 15px; color: var(--text2); font-family: var(--font2); }
+  .splash-loader {
+    position: absolute;
+    bottom: 60px;
+    width: 160px; height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .splash-loader-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    animation: load 2s ease forwards;
+  }
+  @keyframes load { from { width: 0; } to { width: 100%; } }
+
+  /* --- ONBOARDING --- */
+  .onboard-header {
+    padding: 20px 24px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .onboard-body { padding: 32px 24px; flex: 1; display: flex; flex-direction: column; gap: 24px; }
+  .onboard-title { font-size: 26px; font-weight: 800; color: var(--text); line-height: 1.2; }
+  .onboard-sub { font-size: 14px; color: var(--text2); font-family: var(--font2); line-height: 1.6; }
+  .otp-boxes { display: flex; gap: 12px; justify-content: center; margin: 8px 0; }
+  .otp-box {
+    width: 52px; height: 56px;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 700; color: var(--text);
+    transition: border-color 0.2s;
+  }
+  .otp-box.filled { border-color: var(--accent); background: rgba(0,212,255,0.08); }
+
+  /* PIN pad */
+  .pin-display { display: flex; gap: 16px; justify-content: center; margin: 12px 0; }
+  .pin-dot {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--text2);
+    transition: all 0.2s;
+  }
+  .pin-dot.filled { background: var(--accent); border-color: var(--accent); }
+  .pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .pin-key {
+    height: 60px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 600; color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: var(--font2);
+  }
+  .pin-key:active { background: var(--surface3); transform: scale(0.95); }
+  .pin-key.delete { font-size: 18px; }
+  .pin-key.empty { background: transparent; border-color: transparent; cursor: default; }
+
+  /* --- HOME SCREEN --- */
+  .home-header {
+    padding: 0 20px 16px;
+    background: linear-gradient(160deg, #0D1F3C, #0A1628);
+  }
+  .home-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0;
+  }
+  .home-greeting { font-size: 13px; color: var(--text2); font-family: var(--font2); }
+  .home-name { font-size: 18px; font-weight: 700; color: var(--text); }
+  .avatar {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: white;
+    cursor: pointer;
+  }
+
+  /* Wallet card */
+  .wallet-card {
+    background: linear-gradient(135deg, #1a2744, #0f1e38);
+    border-radius: 20px;
+    border: 1px solid rgba(0,212,255,0.2);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 16px;
+    cursor: pointer;
+  }
+  .wallet-card::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 140px; height: 140px;
+    background: radial-gradient(circle, rgba(0,212,255,0.15) 0%, transparent 70%);
+  }
+  .wallet-label { font-size: 12px; color: var(--text2); font-family: var(--font2); margin-bottom: 4px; }
+  .wallet-balance { font-size: 32px; font-weight: 800; color: var(--text); letter-spacing: -1px; }
+  .wallet-balance span { font-size: 18px; opacity: 0.7; }
+  .wallet-row { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+  .wallet-upi { font-size: 12px; color: var(--text2); font-family: var(--font2); }
+  .wallet-actions { display: flex; gap: 8px; }
+  .wallet-btn {
+    background: rgba(0,212,255,0.15);
+    border: 1px solid rgba(0,212,255,0.3);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px; font-weight: 600; color: var(--accent);
+    cursor: pointer;
+    font-family: var(--font2);
+  }
+
+  /* Scan bar */
+  .scan-bar {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 14px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    margin-bottom: 16px;
+    transition: transform 0.2s;
+  }
+  .scan-bar:active { transform: scale(0.98); }
+  .scan-bar-text { font-size: 15px; font-weight: 700; color: white; }
+  .scan-bar-sub { font-size: 12px; color: rgba(255,255,255,0.7); font-family: var(--font2); }
+  .qr-icon-box {
+    width: 44px; height: 44px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+
+  /* Quick actions */
+  .quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 8px; }
+  .quick-action {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 6px;
+    padding: 12px 6px;
+    background: var(--surface2);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .quick-action:active { transform: scale(0.95); background: var(--surface3); }
+  .qa-icon {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .qa-label { font-size: 10px; font-weight: 600; color: var(--text2); text-align: center; font-family: var(--font2); }
+
+  /* Transaction item */
+  .txn-item {
+    display: flex; align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .txn-item:last-child { border-bottom: none; }
+  .txn-item:active { opacity: 0.7; }
+  .txn-icon {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    margin-right: 12px;
+    flex-shrink: 0;
+  }
+  .txn-name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .txn-meta { font-size: 12px; color: var(--text2); font-family: var(--font2); margin-top: 2px; }
+  .txn-amount { font-size: 15px; font-weight: 700; margin-left: auto; }
+  .txn-amount.credit { color: var(--green); }
+  .txn-amount.debit { color: var(--text); }
+
+  /* Offer card */
+  .offer-card {
+    border-radius: 16px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    min-width: 200px;
+    transition: transform 0.2s;
+  }
+  .offer-card:active { transform: scale(0.97); }
+  .offer-title { font-size: 16px; font-weight: 800; color: white; margin-bottom: 4px; }
+  .offer-sub { font-size: 12px; color: rgba(255,255,255,0.75); font-family: var(--font2); }
+  .offer-btn {
+    margin-top: 12px;
+    background: white;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-block;
+  }
+
+  /* Scroll row */
+  .scroll-row {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .scroll-row::-webkit-scrollbar { display: none; }
+
+  /* Drama banner */
+  .drama-banner {
+    background: linear-gradient(135deg, #1a0533, #2d0f52);
+    border-radius: 16px;
+    border: 1px solid rgba(108,99,255,0.3);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  .drama-banner:active { transform: scale(0.98); }
+  .drama-thumb {
+    width: 60px; height: 80px;
+    background: linear-gradient(135deg, #6C63FF, #FF4081);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+  }
+  .drama-info { flex: 1; }
+  .drama-tag { font-size: 10px; font-weight: 700; color: var(--accent2); text-transform: uppercase; letter-spacing: 1px; }
+  .drama-name { font-size: 15px; font-weight: 700; color: var(--text); margin: 4px 0; }
+  .drama-meta { font-size: 12px; color: var(--text2); font-family: var(--font2); }
+  .drama-play-btn {
+    background: var(--accent2);
+    border-radius: 20px;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: white;
+    margin-top: 8px;
+    display: inline-block;
+  }
+
+  /* --- PAYMENTS --- */
+  .pay-options { display: flex; flex-direction: column; gap: 8px; }
+  .pay-option {
+    display: flex; align-items: center;
+    padding: 16px;
+    background: var(--surface2);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    gap: 14px;
+    transition: all 0.2s;
+  }
+  .pay-option:active { background: var(--surface3); transform: scale(0.99); }
+  .pay-opt-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .pay-opt-title { font-size: 15px; font-weight: 600; color: var(--text); }
+  .pay-opt-sub { font-size: 12px; color: var(--text2); font-family: var(--font2); margin-top: 2px; }
+  .chevron { margin-left: auto; color: var(--text2); font-size: 14px; }
+
+  /* Amount screen */
+  .amount-display {
+    text-align: center;
+    padding: 32px 24px;
+  }
+  .amount-to { font-size: 13px; color: var(--text2); font-family: var(--font2); }
+  .amount-to-name { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 24px; }
+  .amount-input-wrap { position: relative; }
+  .currency-sym { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 28px; font-weight: 700; color: var(--text2); }
+  .amount-big-input {
+    background: var(--surface2);
+    border: 2px solid var(--accent);
+    border-radius: 16px;
+    padding: 20px 20px 20px 52px;
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--text);
+    width: 100%;
+    outline: none;
+    font-family: var(--font);
+  }
+
+  /* Success screen */
+  .success-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    gap: 16px;
+    text-align: center;
+  }
+  .success-ring {
+    width: 100px; height: 100px;
+    background: rgba(0,196,140,0.15);
+    border: 3px solid var(--green);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 44px;
+    animation: fadeUp 0.5s ease;
+  }
+  .success-title { font-size: 26px; font-weight: 800; color: var(--text); }
+  .success-amount { font-size: 40px; font-weight: 800; color: var(--green); letter-spacing: -1px; }
+  .success-sub { font-size: 14px; color: var(--text2); font-family: var(--font2); }
+  .success-txn-id { font-size: 12px; color: var(--text2); font-family: var(--font2); background: var(--surface2); padding: 8px 16px; border-radius: 20px; }
+
+  /* --- LOANS --- */
+  .loan-hero {
+    background: linear-gradient(135deg, #0d2137, #1a3a5c);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(0,180,216,0.2);
+  }
+  .loan-hero::after {
+    content: '💰';
+    position: absolute;
+    right: -10px;
+    top: -10px;
+    font-size: 80px;
+    opacity: 0.15;
+  }
+  .loan-hero-label { font-size: 12px; color: var(--text2); font-family: var(--font2); margin-bottom: 4px; }
+  .loan-hero-amount { font-size: 36px; font-weight: 800; color: var(--text); }
+  .loan-hero-sub { font-size: 13px; color: var(--text2); font-family: var(--font2); margin-top: 6px; }
+  .loan-card {
+    border-radius: 16px;
+    padding: 18px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    margin-bottom: 10px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .loan-card:active { transform: scale(0.99); }
+  .loan-card-icon {
+    width: 48px; height: 48px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .loan-card-title { font-size: 16px; font-weight: 700; color: var(--text); }
+  .loan-card-sub { font-size: 12px; color: var(--text2); font-family: var(--font2); margin-top: 3px; }
+  .loan-card-rate { font-size: 20px; font-weight: 800; color: var(--green); margin-left: auto; }
+  .loan-card-rate-label { font-size: 10px; color: var(--text2); font-family: var(--font2); text-align: right; }
+
+  /* Eligibility */
+  .check-item {
+    display: flex; align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+  .check-item:last-child { border-bottom: none; }
+  .check-icon-wrap {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .check-label { font-size: 14px; font-weight: 600; color: var(--text); }
+  .check-value { font-size: 12px; color: var(--text2); font-family: var(--font2); margin-top: 2px; }
+  .check-status { margin-left: auto; font-size: 14px; font-weight: 700; }
+
+  /* Progress bar */
+  .progress-wrap { background: var(--border); border-radius: 4px; height: 8px; overflow: hidden; margin: 8px 0; }
+  .progress-bar { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent), var(--green)); transition: width 1s ease; }
+
+  /* --- DRAMA --- */
+  #screen-drama {
+    background: #000;
+  }
+  .drama-feed {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    scroll-snap-type: y mandatory;
+    scrollbar-width: none;
+    gap: 0;
+  }
+  .drama-feed::-webkit-scrollbar { display: none; }
+  .drama-episode {
+    min-height: calc(852px - 126px);
+    scroll-snap-align: start;
+    position: relative;
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-end;
+    padding: 20px 16px;
+    cursor: pointer;
+    overflow: hidden;
+  }
+  .drama-bg {
+    position: absolute;
+    inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 120px;
+  }
+  .drama-gradient { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 50%); }
+  .drama-side-actions {
+    position: absolute;
+    right: 16px;
+    bottom: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  .drama-action {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    cursor: pointer;
+  }
+  .drama-action-icon {
+    width: 44px; height: 44px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    backdrop-filter: blur(10px);
+    transition: transform 0.2s;
+  }
+  .drama-action-icon:active { transform: scale(0.9); }
+  .drama-action-label { font-size: 11px; color: rgba(255,255,255,0.8); font-family: var(--font2); font-weight: 600; }
+  .drama-info-box { flex: 1; }
+  .drama-ep-num { font-size: 11px; font-weight: 700; color: var(--accent2); text-transform: uppercase; letter-spacing: 1px; font-family: var(--font2); }
+  .drama-ep-title { font-size: 20px; font-weight: 800; color: white; margin: 4px 0; }
+  .drama-ep-desc { font-size: 13px; color: rgba(255,255,255,0.7); font-family: var(--font2); line-height: 1.5; }
+  .drama-unlock {
+    background: linear-gradient(135deg, var(--gold), #FF8C00);
+    border-radius: 12px;
+    padding: 12px 20px;
+    text-align: center;
+    margin-top: 10px;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  .drama-unlock:active { transform: scale(0.97); }
+  .drama-unlock-title { font-size: 14px; font-weight: 700; color: white; }
+  .drama-unlock-price { font-size: 12px; color: rgba(255,255,255,0.8); font-family: var(--font2); }
+
+  /* --- REWARDS --- */
+  .reward-hero {
+    background: linear-gradient(135deg, #1a1500, #2a2000);
+    border-radius: 20px;
+    border: 1px solid rgba(255,184,0,0.2);
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .reward-coins { font-size: 48px; font-weight: 800; color: var(--gold); margin: 8px 0; }
+  .scratch-card {
+    width: 100%;
+    height: 120px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #2a1f00, #3d2d00);
+    border: 2px dashed rgba(255,184,0,0.3);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    gap: 8px;
+  }
+  .scratch-card:active { transform: scale(0.97); }
+  .scratch-cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* --- PROFILE --- */
+  .profile-hero {
+    background: linear-gradient(160deg, #0d1f3c, #0a1628);
+    padding: 20px 20px 32px;
+    text-align: center;
+  }
+  .profile-avatar {
+    width: 80px; height: 80px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; font-weight: 800; color: white;
+    margin: 0 auto 12px;
+    border: 3px solid rgba(255,255,255,0.2);
+  }
+  .profile-name { font-size: 22px; font-weight: 800; color: var(--text); }
+  .profile-phone { font-size: 14px; color: var(--text2); font-family: var(--font2); margin-top: 4px; }
+  .profile-badges { display: flex; gap: 8px; justify-content: center; margin-top: 12px; }
+  .profile-menu { padding: 16px 0; }
+  .profile-menu-item {
+    display: flex; align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    gap: 14px;
+    transition: background 0.2s;
+  }
+  .profile-menu-item:active { background: var(--surface2); }
+  .profile-menu-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .profile-menu-label { font-size: 15px; font-weight: 600; color: var(--text); }
+  .profile-menu-sub { font-size: 12px; color: var(--text2); font-family: var(--font2); margin-top: 2px; }
+
+  /* QR Screen */
+  .qr-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    gap: 20px;
+    text-align: center;
+  }
+  .qr-box {
+    width: 220px; height: 220px;
+    background: white;
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 120px;
+    box-shadow: 0 20px 60px rgba(0,212,255,0.2);
+  }
+  .scan-ring {
+    position: absolute;
+    width: 200px; height: 200px;
+    border: 3px solid var(--accent);
+    border-radius: 16px;
+    animation: scanPulse 2s ease infinite;
+  }
+  @keyframes scanPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(1.05); }
+  }
+
+  /* Bill categories */
+  .bill-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .bill-item {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 8px;
+    padding: 16px 8px;
+    background: var(--surface2);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .bill-item:active { transform: scale(0.95); background: var(--surface3); }
+  .bill-icon { font-size: 28px; }
+  .bill-label { font-size: 11px; font-weight: 600; color: var(--text2); text-align: center; font-family: var(--font2); }
+
+  /* Provider list */
+  .provider-item {
+    display: flex; align-items: center;
+    padding: 14px 16px;
+    background: var(--surface2);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    margin-bottom: 8px;
+    cursor: pointer;
+    gap: 12px;
+    transition: all 0.2s;
+  }
+  .provider-item:active { background: var(--surface3); }
+  .provider-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .provider-name { font-size: 15px; font-weight: 600; color: var(--text); }
+
+  /* Screen header */
+  .screen-header {
+    display: flex;
+    align-items: center;
+    padding: 14px 20px;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .screen-header-title { font-size: 18px; font-weight: 700; color: var(--text); }
+
+  /* KYC steps */
+  .kyc-step {
+    display: flex; align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+  .kyc-step-num {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .kyc-step-num.done { background: var(--green); color: white; }
+  .kyc-step-num.active { background: var(--accent); color: white; }
+  .kyc-step-num.pending { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+
+  /* Loan approval */
+  .approval-confetti { font-size: 60px; text-align: center; animation: pulse 1s infinite; }
+  .approval-amount { font-size: 48px; font-weight: 800; color: var(--green); text-align: center; letter-spacing: -2px; }
+  .approval-detail { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .approval-detail-label { font-size: 13px; color: var(--text2); font-family: var(--font2); }
+  .approval-detail-value { font-size: 14px; font-weight: 700; color: var(--text); }
+
+  /* Offers screen */
+  .offers-hero {
+    background: linear-gradient(135deg, #0d2b1f, #0a2216);
+    border-radius: 20px;
+    padding: 20px;
+    border: 1px solid rgba(0,196,140,0.2);
+    margin-bottom: 16px;
+    text-align: center;
+  }
+  .offer-list-card {
+    background: var(--surface2);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    padding: 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: all 0.2s;
+  }
+  .offer-list-card:active { background: var(--surface3); transform: scale(0.99); }
+  .offer-list-icon {
+    width: 50px; height: 50px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+  .offer-badge {
+    margin-left: auto;
+    background: rgba(0,196,140,0.15);
+    border: 1px solid rgba(0,196,140,0.3);
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--green);
+  }
+
+  /* Notification screen */
+  .notif-icon-big {
+    width: 90px; height: 90px;
+    background: linear-gradient(135deg, var(--accent2), #9C27B0);
+    border-radius: 28px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 44px;
+    margin: 0 auto 24px;
+    box-shadow: 0 20px 60px rgba(108,99,255,0.3);
+  }
+
+  /* Helpers */
+  .mt4 { margin-top: 4px; }
+  .mt8 { margin-top: 8px; }
+  .mt12 { margin-top: 12px; }
+  .mt16 { margin-top: 16px; }
+  .mt24 { margin-top: 24px; }
+  .p20 { padding: 20px; }
+  .flex-between { display: flex; align-items: center; justify-content: space-between; }
+  .flex-center { display: flex; align-items: center; justify-content: center; }
+  .text-center { text-align: center; }
+  .text-xs { font-size: 12px; font-family: var(--font2); color: var(--text2); }
+  .text-sm { font-size: 14px; font-family: var(--font2); }
+  .text-md { font-size: 15px; font-weight: 600; color: var(--text); }
+  .text-bold { font-weight: 700; color: var(--text); }
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  /* Error state */
+  .error-ring {
+    width: 90px; height: 90px;
+    background: rgba(255,77,109,0.12);
+    border: 3px solid var(--red);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 40px;
+    margin: 0 auto;
+  }
+
+  /* Refer card */
+  .refer-card {
+    background: linear-gradient(135deg, #1a0f2e, #0e1a35);
+    border-radius: 20px;
+    padding: 20px;
+    border: 1px solid rgba(108,99,255,0.3);
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .refer-code {
+    background: var(--surface2);
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: 4px;
+    display: inline-block;
+    margin: 12px 0;
+    border: 1px dashed rgba(0,212,255,0.3);
+  }
+
+  /* ===== FINSHELL PAY LOGO ===== */
+  .fp-logo-icon {
+    width: 90px; height: 90px;
+    background: linear-gradient(135deg, #1a9bc8, #00c4e8, #27d4f7);
+    border-radius: 26px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 0 0 rgba(0,212,255,0.5);
+    animation: logoPulse 2.5s ease-in-out infinite;
+    position: relative;
+    overflow: hidden;
+  }
+  .fp-logo-icon::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.25) 50%, transparent 70%);
+    animation: logoShine 3s ease-in-out infinite;
+  }
+  @keyframes logoPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0,212,255,0.5), 0 20px 60px rgba(0,180,216,0.4); }
+    50% { box-shadow: 0 0 0 14px rgba(0,212,255,0), 0 20px 60px rgba(0,180,216,0.6); }
+  }
+  @keyframes logoShine {
+    0% { transform: translateX(-100%) rotate(25deg); }
+    40%, 100% { transform: translateX(100%) rotate(25deg); }
+  }
+
+  /* ===== GLOBAL ANIMATIONS ===== */
+
+  /* Screen entrance */
+  .screen.active { animation: screenIn 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+  @keyframes screenIn {
+    from { opacity: 0; transform: translateX(30px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  /* Staggered children */
+  .anim-child { opacity: 0; animation: fadeUp 0.4s ease forwards; }
+  .anim-child:nth-child(1) { animation-delay: 0.05s; }
+  .anim-child:nth-child(2) { animation-delay: 0.12s; }
+  .anim-child:nth-child(3) { animation-delay: 0.19s; }
+  .anim-child:nth-child(4) { animation-delay: 0.26s; }
+  .anim-child:nth-child(5) { animation-delay: 0.33s; }
+  .anim-child:nth-child(6) { animation-delay: 0.40s; }
+  .anim-child:nth-child(7) { animation-delay: 0.47s; }
+  .anim-child:nth-child(8) { animation-delay: 0.54s; }
+
+  /* Floating particles on splash */
+  .splash-particle {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0;
+    animation: particleFloat linear infinite;
+  }
+  @keyframes particleFloat {
+    0%   { opacity: 0; transform: translateY(0) scale(0); }
+    10%  { opacity: 0.6; transform: translateY(-20px) scale(1); }
+    90%  { opacity: 0.3; transform: translateY(-320px) scale(0.5); }
+    100% { opacity: 0; transform: translateY(-360px) scale(0); }
+  }
+
+  /* Wallet card shimmer */
+  .wallet-shimmer {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.07) 50%, transparent 60%);
+    background-size: 200% 100%;
+    animation: walletShimmer 3s ease infinite;
+    pointer-events: none;
+    border-radius: inherit;
+  }
+  @keyframes walletShimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Scan button pulse ring */
+  .scan-pulse-ring {
+    position: absolute;
+    inset: -4px;
+    border-radius: inherit;
+    border: 2px solid rgba(0,212,255,0.4);
+    animation: scanRingPulse 2s ease-out infinite;
+    pointer-events: none;
+  }
+  @keyframes scanRingPulse {
+    0%   { transform: scale(1); opacity: 0.8; }
+    100% { transform: scale(1.06); opacity: 0; }
+  }
+
+  /* Quick action hover bounce */
+  .quick-action {
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  }
+  .quick-action:active {
+    transform: scale(0.88) !important;
+  }
+
+  /* Nav active indicator */
+  .nav-item.active::after {
+    content: '';
+    display: block;
+    width: 18px; height: 3px;
+    background: var(--accent);
+    border-radius: 2px;
+    margin: 2px auto 0;
+    animation: navDot 0.3s ease;
+  }
+  @keyframes navDot {
+    from { width: 0; opacity: 0; }
+    to   { width: 18px; opacity: 1; }
+  }
+
+  /* Success checkmark animation */
+  .success-ring { animation: successPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both !important; }
+  @keyframes successPop {
+    0%   { transform: scale(0) rotate(-180deg); opacity: 0; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+  .success-amount { animation: countUp 0.6s ease 0.3s both; }
+  @keyframes countUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Pin dot pop */
+  .pin-dot.filled {
+    animation: pinPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes pinPop {
+    0%   { transform: scale(0); }
+    100% { transform: scale(1); }
+  }
+
+  /* OTP box bounce */
+  .otp-box.filled { animation: otpBounce 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  @keyframes otpBounce {
+    0%   { transform: scale(0.7); }
+    100% { transform: scale(1); }
+  }
+
+  /* Loading spinner upgrade */
+  .spinner {
+    width: 44px; height: 44px;
+    border: 3px solid transparent;
+    border-top-color: var(--accent);
+    border-right-color: rgba(0,212,255,0.3);
+    border-radius: 50%;
+    animation: spinPro 0.7s linear infinite;
+  }
+  @keyframes spinPro {
+    to { transform: rotate(360deg); }
+  }
+  .loading-overlay { animation: overlayFade 0.2s ease; }
+  @keyframes overlayFade { from { opacity: 0; } to { opacity: 1; } }
+
+  /* Card entrance on scroll */
+  .card { animation: cardSlide 0.3s ease both; }
+  @keyframes cardSlide {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Loan progress bar fill */
+  .progress-bar { animation: progressFill 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+  @keyframes progressFill {
+    from { width: 0 !important; }
+  }
+
+  /* Drama episode entrance */
+  .drama-episode .drama-info-box { animation: slideUp 0.5s ease both; }
+  .drama-episode .drama-side-actions { animation: slideRight 0.5s ease 0.2s both; }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slideRight {
+    from { opacity: 0; transform: translateX(20px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  /* Reward coins bounce */
+  .reward-coins { animation: coinBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both; }
+  @keyframes coinBounce {
+    from { opacity: 0; transform: scale(0.5) translateY(20px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  /* Offer card slide in */
+  .offer-list-card { animation: offerSlide 0.35s ease both; }
+  .offer-list-card:nth-child(2) { animation-delay: 0.07s; }
+  .offer-list-card:nth-child(3) { animation-delay: 0.14s; }
+  .offer-list-card:nth-child(4) { animation-delay: 0.21s; }
+  .offer-list-card:nth-child(5) { animation-delay: 0.28s; }
+  @keyframes offerSlide {
+    from { opacity: 0; transform: translateX(-20px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  /* Floating orbs background on home */
+  .home-orb {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    filter: blur(40px);
+  }
+  .home-orb-1 {
+    width: 160px; height: 160px;
+    background: rgba(0,212,255,0.08);
+    top: -40px; right: -40px;
+    animation: orbFloat1 8s ease-in-out infinite;
+  }
+  .home-orb-2 {
+    width: 100px; height: 100px;
+    background: rgba(108,99,255,0.1);
+    top: 80px; left: -20px;
+    animation: orbFloat2 6s ease-in-out infinite;
+  }
+  @keyframes orbFloat1 {
+    0%, 100% { transform: translate(0,0) scale(1); }
+    50% { transform: translate(-15px, 20px) scale(1.1); }
+  }
+  @keyframes orbFloat2 {
+    0%, 100% { transform: translate(0,0) scale(1); }
+    50% { transform: translate(10px, -15px) scale(1.05); }
+  }
+
+  /* Txn items stagger */
+  .txn-item { animation: txnFade 0.3s ease both; }
+  .txn-item:nth-child(1) { animation-delay: 0.05s; }
+  .txn-item:nth-child(2) { animation-delay: 0.12s; }
+  .txn-item:nth-child(3) { animation-delay: 0.19s; }
+  .txn-item:nth-child(4) { animation-delay: 0.26s; }
+  .txn-item:nth-child(5) { animation-delay: 0.33s; }
+  @keyframes txnFade {
+    from { opacity: 0; transform: translateX(-12px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  /* Loan card entrance */
+  .loan-card { animation: loanPop 0.35s cubic-bezier(0.34, 1.2, 0.64, 1) both; }
+  .loan-card:nth-child(2) { animation-delay: 0.07s; }
+  .loan-card:nth-child(3) { animation-delay: 0.14s; }
+  .loan-card:nth-child(4) { animation-delay: 0.21s; }
+  @keyframes loanPop {
+    from { opacity: 0; transform: translateY(20px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* Approval confetti wiggle */
+  .approval-confetti { animation: confettiWiggle 0.8s ease 0.2s both, pulse 1.5s 1s infinite; }
+  @keyframes confettiWiggle {
+    0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+    60%  { transform: scale(1.2) rotate(10deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+
+  /* QR scan line animation */
+  .scan-line {
+    position: absolute;
+    left: 10%; right: 10%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    border-radius: 1px;
+    top: 10%;
+    animation: scanLine 2s ease-in-out infinite;
+    box-shadow: 0 0 8px var(--accent);
+  }
+  @keyframes scanLine {
+    0%   { top: 10%; opacity: 1; }
+    100% { top: 90%; opacity: 0.3; }
+  }
+
+  /* Profile avatar ring */
+  .profile-avatar {
+    animation: avatarGlow 3s ease-in-out infinite !important;
+  }
+  @keyframes avatarGlow {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(0,212,255,0.2), 0 0 0 6px rgba(0,212,255,0); }
+    50%       { box-shadow: 0 0 0 3px rgba(0,212,255,0.4), 0 0 0 10px rgba(0,212,255,0.1); }
+  }
+
+  /* Bill item bounce */
+  .bill-item { transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important; }
+  .bill-item:active { transform: scale(0.88) !important; }
+
+  /* Wallet balance counter animation */
+  .wallet-balance { animation: balanceFade 0.6s ease both; }
+  @keyframes balanceFade {
+    from { opacity: 0; filter: blur(8px); transform: scale(0.9); }
+    to   { opacity: 1; filter: blur(0); transform: scale(1); }
+  }
+
+  /* Nav scan button */
+  .nav-scan {
+    animation: scanBtnGlow 2.5s ease-in-out infinite !important;
+    position: relative;
+  }
+  @keyframes scanBtnGlow {
+    0%, 100% { box-shadow: 0 4px 20px rgba(0,212,255,0.4); }
+    50%       { box-shadow: 0 4px 32px rgba(0,212,255,0.8), 0 0 0 6px rgba(0,212,255,0.1); }
+  }
+
+  /* Drama action icons pulse on like */
+  .drama-action-icon:active { animation: likeHeart 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  @keyframes likeHeart {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.4); }
+    100% { transform: scale(1); }
+  }
+
+  /* Scratch card reveal */
+  .scratch-card { transition: all 0.4s cubic-bezier(0.34, 1.2, 0.64, 1); }
+
+  /* KYC step pop */
+  .kyc-step { animation: kycSlide 0.3s ease both; }
+  .kyc-step:nth-child(1) { animation-delay: 0.05s; }
+  .kyc-step:nth-child(2) { animation-delay: 0.12s; }
+  .kyc-step:nth-child(3) { animation-delay: 0.19s; }
+  .kyc-step:nth-child(4) { animation-delay: 0.26s; }
+  @keyframes kycSlide {
+    from { opacity: 0; transform: translateX(-10px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  /* Background animated gradient body */
+  body {
+    background: radial-gradient(ellipse at 30% 20%, #0d2040 0%, #050A14 60%);
+    animation: bgPulse 10s ease-in-out infinite alternate;
+  }
+  @keyframes bgPulse {
+    from { background: radial-gradient(ellipse at 30% 20%, #0d2040 0%, #050A14 60%); }
+    to   { background: radial-gradient(ellipse at 70% 80%, #0a1a35 0%, #020810 60%); }
+  }
+
+  /* Error ring shake */
+  .error-ring { animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+  @keyframes shake {
+    10%, 90%  { transform: translateX(-2px); }
+    20%, 80%  { transform: translateX(4px); }
+    30%, 50%, 70% { transform: translateX(-4px); }
+    40%, 60%  { transform: translateX(4px); }
+  }
+
+  /* Splash logo draw */
+  .splash-fp-logo path {
+    stroke-dasharray: 300;
+    stroke-dashoffset: 300;
+    animation: drawPath 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.3s forwards;
+  }
+  .splash-fp-logo path:nth-child(2) { animation-delay: 0.9s; }
+  @keyframes drawPath {
+    to { stroke-dashoffset: 0; }
+  }
+
+  /* Floating label animation on input focus */
+  .input-field:focus { animation: inputGlow 0.3s ease; }
+  @keyframes inputGlow {
+    from { box-shadow: 0 0 0 0 rgba(0,212,255,0.3); }
+    to   { box-shadow: 0 0 0 4px rgba(0,212,255,0.1); }
+  }
+
+  /* ===== REDESIGNED BOTTOM NAV ===== */
+  .bottom-nav2 {
+    height: 82px;
+    background: rgba(13, 20, 36, 0.97);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 4px 10px;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .bottom-nav2::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 10%; right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0,212,255,0.25), transparent);
+  }
+
+  .nav2-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 10px 10px 0;
+    border-radius: 16px;
+    transition: all 0.25s cubic-bezier(0.34, 1.4, 0.64, 1);
+    min-width: 52px;
+    position: relative;
+  }
+  .nav2-item:active { transform: scale(0.88); }
+
+  .nav2-icon-wrap {
+    width: 36px; height: 36px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: #4A5C78;
+    transition: all 0.25s ease;
+    position: relative;
+  }
+
+  .nav2-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #4A5C78;
+    font-family: var(--font2);
+    transition: color 0.25s ease;
+    letter-spacing: 0.2px;
+  }
+
+  /* Active state */
+  .nav2-active .nav2-icon-wrap {
+    color: var(--accent);
+    background: rgba(0,212,255,0.1);
+  }
+  .nav2-active .nav2-label { color: var(--accent); }
+  .nav2-active::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%; transform: translateX(-50%);
+    width: 20px; height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px 2px 0 0;
+    animation: navLineIn 0.3s cubic-bezier(0.34, 1.4, 0.64, 1);
+  }
+  @keyframes navLineIn {
+    from { width: 0; opacity: 0; }
+    to   { width: 20px; opacity: 1; }
+  }
+
+  /* Active icon glow */
+  .nav2-active .nav2-icon-wrap::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    background: rgba(0,212,255,0.08);
+    animation: iconGlowPulse 2s ease-in-out infinite;
+  }
+  @keyframes iconGlowPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0,212,255,0.2); }
+    50%       { box-shadow: 0 0 0 6px rgba(0,212,255,0); }
+  }
+
+  /* ── SCAN BUTTON ── */
+  .nav2-scan {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    position: relative;
+    margin-top: -22px;
+    padding: 0 8px;
+  }
+  .nav2-scan > svg {
+    width: 58px; height: 58px;
+    background: linear-gradient(135deg, #00C8F0 0%, #0094CC 50%, #5B4FE8 100%);
+    border-radius: 50%;
+    padding: 14px;
+    box-shadow:
+      0 0 0 4px rgba(13,20,36,0.97),
+      0 0 0 5px rgba(0,200,240,0.2),
+      0 8px 32px rgba(0,180,220,0.5),
+      0 2px 8px rgba(0,0,0,0.4);
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    z-index: 2;
+    animation: scanBtnPulse 2.8s ease-in-out infinite;
+  }
+  .nav2-scan:active > svg { transform: scale(0.88); }
+
+  @keyframes scanBtnPulse {
+    0%, 100% {
+      box-shadow:
+        0 0 0 4px rgba(13,20,36,0.97),
+        0 0 0 5px rgba(0,200,240,0.2),
+        0 8px 32px rgba(0,180,220,0.5),
+        0 2px 8px rgba(0,0,0,0.4);
+    }
+    50% {
+      box-shadow:
+        0 0 0 4px rgba(13,20,36,0.97),
+        0 0 0 8px rgba(0,200,240,0.15),
+        0 12px 40px rgba(0,180,220,0.7),
+        0 2px 8px rgba(0,0,0,0.4);
+    }
+  }
+
+  .nav2-scan-ring {
+    position: absolute;
+    top: -2px; left: 50%;
+    transform: translateX(-50%);
+    width: 62px; height: 62px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(0,200,240,0.35);
+    animation: scanNavRing 2.8s ease-out infinite;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .nav2-scan-ring2 {
+    animation-delay: 1.4s;
+    border-color: rgba(0,200,240,0.2);
+  }
+  @keyframes scanNavRing {
+    0%   { transform: translateX(-50%) scale(1); opacity: 0.8; }
+    100% { transform: translateX(-50%) scale(1.5); opacity: 0; }
+  }
+
+  .nav2-scan-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent);
+    font-family: var(--font2);
+    letter-spacing: 0.3px;
+    margin-top: 2px;
+    position: relative;
+    z-index: 2;
+  }
+
+
+  @keyframes beamSweep {
+    0%   { top: 20px; opacity: 1; }
+    45%  { top: calc(100% - 22px); opacity: 0.8; }
+    50%  { top: calc(100% - 22px); opacity: 0; }
+    51%  { top: 20px; opacity: 0; }
+    55%  { top: 20px; opacity: 1; }
+    100% { top: 20px; opacity: 1; }
+  }
+  @keyframes qrOuterGlow {
+    0%, 100% { border-color: rgba(0,212,255,0.15); box-shadow: none; }
+    50%       { border-color: rgba(0,212,255,0.35); box-shadow: 0 0 20px rgba(0,212,255,0.1); }
+  }
+  @keyframes statusPulse {
+    0%, 100% { background: rgba(0,212,255,0.08); }
+    50%       { background: rgba(0,212,255,0.15); }
+  }
+</style>
+</head>
+<body>
+<div class="phone-wrapper">
+<div class="phone-shell">
+
+  <!-- ============ SPLASH ============ -->
+  <div class="screen active" id="screen-splash" style="background: linear-gradient(160deg, #050A14 0%, #0A1628 50%, #0D1F3C 100%); justify-content:center; align-items:center; overflow:hidden; position:relative;">
+    <!-- Particles -->
+    <div class="splash-particle" style="width:6px;height:6px;background:rgba(0,212,255,0.7);left:20%;animation-duration:4s;animation-delay:0s;"></div>
+    <div class="splash-particle" style="width:4px;height:4px;background:rgba(108,99,255,0.7);left:50%;animation-duration:5s;animation-delay:0.5s;"></div>
+    <div class="splash-particle" style="width:8px;height:8px;background:rgba(0,196,140,0.5);left:75%;animation-duration:3.5s;animation-delay:1s;"></div>
+    <div class="splash-particle" style="width:5px;height:5px;background:rgba(0,212,255,0.5);left:35%;animation-duration:4.5s;animation-delay:0.8s;"></div>
+    <div class="splash-particle" style="width:3px;height:3px;background:rgba(255,184,0,0.6);left:62%;animation-duration:3s;animation-delay:1.5s;"></div>
+    <div class="splash-particle" style="width:7px;height:7px;background:rgba(0,212,255,0.4);left:85%;animation-duration:5s;animation-delay:0.3s;"></div>
+    <!-- Glow orbs -->
+    <div style="position:absolute;width:300px;height:300px;background:radial-gradient(circle,rgba(0,180,216,0.12) 0%,transparent 70%);top:-80px;left:-60px;animation:orbFloat1 8s ease-in-out infinite;pointer-events:none;"></div>
+    <div style="position:absolute;width:200px;height:200px;background:radial-gradient(circle,rgba(108,99,255,0.1) 0%,transparent 70%);bottom:0px;right:-40px;animation:orbFloat2 6s ease-in-out infinite;pointer-events:none;"></div>
+
+    <div class="splash-logo" style="display:flex;flex-direction:column;align-items:center;gap:20px;">
+      <!-- Animated FP Logo Box -->
+      <div style="position:relative;">
+        <div class="fp-logo-icon" style="width:100px;height:100px;border-radius:30px;">
+          <svg class="splash-fp-logo" width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="splashLG" x1="0" y1="0" x2="60" y2="60" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="white"/><stop offset="100%" stop-color="rgba(255,255,255,0.85)"/>
+              </linearGradient>
+            </defs>
+            <path d="M12 10 L12 50 M12 10 L30 10 Q38 10 38 18 Q38 26 30 26 L12 26 M12 30 L26 30"
+              stroke="url(#splashLG)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <path d="M32 26 L32 50 M32 26 L44 26 Q52 26 52 36 Q52 46 44 46 L32 46"
+              stroke="url(#splashLG)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+        </div>
+        <!-- Ripple rings -->
+        <div style="position:absolute;inset:-12px;border:1.5px solid rgba(0,212,255,0.3);border-radius:42px;animation:scanRingPulse 2s ease-out 0.5s infinite;pointer-events:none;"></div>
+        <div style="position:absolute;inset:-24px;border:1px solid rgba(0,212,255,0.15);border-radius:54px;animation:scanRingPulse 2s ease-out 1s infinite;pointer-events:none;"></div>
+      </div>
+      <div>
+        <div class="splash-title" style="animation:fadeUp 0.6s ease 1s both;">Finshell Pay</div>
+        <div class="splash-sub" style="animation:fadeUp 0.6s ease 1.2s both; opacity:0;">Payments · Loans · Entertainment</div>
+      </div>
+    </div>
+    <div class="splash-loader" style="animation:fadeUp 0.4s ease 1.4s both; opacity:0;"><div class="splash-loader-bar"></div></div>
+  </div>
+
+  <!-- ============ LOGIN ============ -->
+  <div class="screen" id="screen-login">
+    <div style="height:70px; background: linear-gradient(160deg,#0D1F3C,#0A1628); display:flex; align-items:center; padding:0 20px; gap:10px;">
+      <div class="fp-logo-icon" style="width:38px;height:38px;border-radius:11px;flex-shrink:0;">
+        <svg width="24" height="24" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 10 L12 50 M12 10 L30 10 Q38 10 38 18 Q38 26 30 26 L12 26 M12 30 L26 30" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <path d="M32 26 L32 50 M32 26 L44 26 Q52 26 52 36 Q52 46 44 46 L32 46" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </div>
+      <div style="font-size:20px; font-weight:800; color:var(--text); animation:fadeUp 0.4s ease both;">Finshell Pay</div>
+    </div>
+    <div class="onboard-body">
+      <div>
+        <div class="onboard-title">Welcome back 👋</div>
+        <div class="onboard-sub mt4">Enter your mobile number to continue</div>
+      </div>
+      <div>
+        <div style="font-size:12px; font-weight:600; color:var(--text2); margin-bottom:8px; font-family:var(--font2);">MOBILE NUMBER</div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <div style="background:var(--surface2); border:1.5px solid var(--border); border-radius:10px; padding:14px 12px; font-size:15px; color:var(--text); font-family:var(--font2); flex-shrink:0;">🇮🇳 +91</div>
+          <input class="input-field" type="tel" placeholder="98765 43210" value="98765 43210" style="flex:1;">
+        </div>
+      </div>
+      <div style="margin-top:auto;">
+        <button class="btn-primary" onclick="goto('screen-otp')">Send OTP →</button>
+        <div class="text-xs text-center mt12">By continuing, you agree to our <span style="color:var(--accent)">Terms of Service</span> & <span style="color:var(--accent)">Privacy Policy</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ OTP ============ -->
+  <div class="screen" id="screen-otp">
+    <div class="onboard-header">
+      <div class="back-btn" onclick="goto('screen-login')">←</div>
+    </div>
+    <div class="onboard-body">
+      <div>
+        <div class="onboard-title">Verify OTP 🔐</div>
+        <div class="onboard-sub mt4">Enter the 6-digit code sent to <strong style="color:var(--text)">+91 98765 43210</strong></div>
+      </div>
+      <div>
+        <div class="otp-boxes">
+          <div class="otp-box filled">9</div>
+          <div class="otp-box filled">4</div>
+          <div class="otp-box filled">7</div>
+          <div class="otp-box filled">2</div>
+          <div class="otp-box">_</div>
+          <div class="otp-box">_</div>
+        </div>
+        <div class="text-xs text-center mt12">Resend OTP in <span style="color:var(--accent)">28s</span></div>
+      </div>
+      <div style="margin-top:auto;">
+        <button class="btn-primary" onclick="goto('screen-createprofile')">Verify & Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CREATE PROFILE ============ -->
+  <div class="screen" id="screen-createprofile">
+    <div class="onboard-header">
+      <div class="back-btn" onclick="goto('screen-otp')">←</div>
+    </div>
+    <div class="onboard-body">
+      <div>
+        <div class="onboard-title">Create Profile ✨</div>
+        <div class="onboard-sub mt4">Tell us a bit about yourself</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        <div>
+          <div style="font-size:12px; font-weight:600; color:var(--text2); margin-bottom:6px; font-family:var(--font2);">FULL NAME</div>
+          <input class="input-field" placeholder="Arjun Sharma" value="Arjun Sharma">
+        </div>
+        <div>
+          <div style="font-size:12px; font-weight:600; color:var(--text2); margin-bottom:6px; font-family:var(--font2);">EMAIL ADDRESS</div>
+          <input class="input-field" placeholder="arjun@email.com" value="arjun@email.com">
+        </div>
+        <div>
+          <div style="font-size:12px; font-weight:600; color:var(--text2); margin-bottom:6px; font-family:var(--font2);">DATE OF BIRTH</div>
+          <input class="input-field" type="text" placeholder="15 / 08 / 1995" value="15 / 08 / 1995">
+        </div>
+      </div>
+      <div style="margin-top:auto;">
+        <button class="btn-primary" onclick="goto('screen-setupi')">Create Account →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SET UPI PIN ============ -->
+  <div class="screen" id="screen-setupi">
+    <div class="onboard-header">
+      <div class="back-btn" onclick="goto('screen-createprofile')">←</div>
+    </div>
+    <div class="onboard-body" style="gap:20px;">
+      <div>
+        <div class="onboard-title">Set UPI PIN 🔒</div>
+        <div class="onboard-sub mt4">This PIN will be used to authorise all transactions</div>
+      </div>
+      <div id="pin-display" class="pin-display">
+        <div class="pin-dot" id="pd1"></div>
+        <div class="pin-dot" id="pd2"></div>
+        <div class="pin-dot" id="pd3"></div>
+        <div class="pin-dot" id="pd4"></div>
+        <div class="pin-dot" id="pd5"></div>
+        <div class="pin-dot" id="pd6"></div>
+      </div>
+      <div class="pin-pad" id="pin-pad-setup">
+        <div class="pin-key" onclick="pinInput(1)">1</div><div class="pin-key" onclick="pinInput(2)">2</div><div class="pin-key" onclick="pinInput(3)">3</div>
+        <div class="pin-key" onclick="pinInput(4)">4</div><div class="pin-key" onclick="pinInput(5)">5</div><div class="pin-key" onclick="pinInput(6)">6</div>
+        <div class="pin-key" onclick="pinInput(7)">7</div><div class="pin-key" onclick="pinInput(8)">8</div><div class="pin-key" onclick="pinInput(9)">9</div>
+        <div class="pin-key empty"></div><div class="pin-key" onclick="pinInput(0)">0</div><div class="pin-key delete" onclick="pinDelete()">⌫</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ NOTIFICATIONS ============ -->
+  <div class="screen" id="screen-notifications">
+    <div class="onboard-body" style="align-items:center; justify-content:center; text-align:center; padding-top:60px;">
+      <div class="notif-icon-big">🔔</div>
+      <div class="onboard-title">Stay in the loop!</div>
+      <div class="onboard-sub mt8" style="max-width:260px; margin:0 auto;">Get alerts for payments, cashback, exclusive offers and more</div>
+      <div style="display:flex; flex-direction:column; gap:10px; margin-top:auto; width:100%;">
+        <button class="btn-primary" onclick="goto('screen-home')">Enable Notifications 🔔</button>
+        <button class="btn-ghost" onclick="goto('screen-home')">Maybe Later</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ HOME ============ -->
+  <div class="screen" id="screen-home">
+    <div class="status-bar">
+      <span>9:30</span>
+      <div class="status-icons"><span>📶</span><span>🔋</span></div>
+    </div>
+    <div class="scroll-content">
+      <div class="home-header" style="position:relative;overflow:hidden;"><div class="home-orb home-orb-1"></div><div class="home-orb home-orb-2"></div>
+        <div class="home-topbar">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+            <div class="fp-logo-icon" style="width:22px;height:22px;border-radius:6px;flex-shrink:0;animation:none;box-shadow:none;">
+              <svg width="14" height="14" viewBox="0 0 60 60" fill="none"><path d="M12 10 L12 50 M12 10 L30 10 Q38 10 38 18 Q38 26 30 26 L12 26 M12 30 L26 30" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M32 26 L32 50 M32 26 L44 26 Q52 26 52 36 Q52 46 44 46 L32 46" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+            </div>
+            <div class="home-greeting" style="margin:0;">Good Morning,</div>
+          </div>
+            <div class="home-name">Arjun Sharma 👋</div>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <div style="font-size:20px; cursor:pointer;" onclick="goto('screen-rewards')">🎁</div>
+            <div class="avatar" onclick="goto('screen-profile')">A</div>
+          </div>
+        </div>
+
+        <!-- Wallet card -->
+        <div class="wallet-card" onclick="goto('screen-home')" style="position:relative;"><div class="wallet-shimmer"></div>
+          <div class="wallet-label">Wallet Balance</div>
+          <div class="wallet-balance"><span>₹</span>12,480<span style="font-size:20px;">.50</span></div>
+          <div class="wallet-row">
+            <div class="wallet-upi">UPI: arjun@finshell</div>
+            <div class="wallet-actions">
+              <div class="wallet-btn" onclick="event.stopPropagation(); goto('screen-addmoney')">+ Add</div>
+              <div class="wallet-btn" onclick="event.stopPropagation(); goto('screen-sendmoney')">Send</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scan bar -->
+        <div class="scan-bar" onclick="goto('screen-scan')" style="position:relative;overflow:visible;"><div class="scan-pulse-ring"></div>
+          <div>
+            <div class="scan-bar-text">📷 Scan & Pay</div>
+            <div class="scan-bar-sub">Scan any UPI QR to pay instantly</div>
+          </div>
+          <div class="qr-icon-box">▦</div>
+        </div>
+      </div>
+
+      <div style="padding:16px 20px;">
+
+        <!-- Quick Actions row 1 -->
+        <div class="section-title flex-between">Quick Actions <span style="font-size:12px; color:var(--accent); font-family:var(--font2); cursor:pointer;">See all →</span></div>
+        <div class="quick-actions">
+          <div class="quick-action" onclick="goto('screen-sendmoney')">
+            <div class="qa-icon" style="background:rgba(0,212,255,0.12);">💸</div>
+            <div class="qa-label">Send Money</div>
+          </div>
+          <div class="quick-action" onclick="goto('screen-requestmoney')">
+            <div class="qa-icon" style="background:rgba(0,196,140,0.12);">📥</div>
+            <div class="qa-label">Request</div>
+          </div>
+          <div class="quick-action" onclick="goto('screen-recharge')">
+            <div class="qa-icon" style="background:rgba(255,184,0,0.12);">📱</div>
+            <div class="qa-label">Recharge</div>
+          </div>
+          <div class="quick-action" onclick="goto('screen-bills')">
+            <div class="qa-icon" style="background:rgba(108,99,255,0.12);">🧾</div>
+            <div class="qa-label">Pay Bills</div>
+          </div>
+        </div>
+        <div class="quick-actions mt8">
+          <div class="quick-action" onclick="goto('screen-loans')">
+            <div class="qa-icon" style="background:rgba(0,180,216,0.12);">🏦</div>
+            <div class="qa-label">Loan</div>
+          </div>
+          <div class="quick-action" onclick="goto('screen-insurance')">
+            <div class="qa-icon" style="background:rgba(255,77,109,0.12);">🛡️</div>
+            <div class="qa-label">Insurance</div>
+          </div>
+          <div class="quick-action" onclick="goto('screen-drama')">
+            <div class="qa-icon" style="background:rgba(108,99,255,0.12);">🎬</div>
+            <div class="qa-label">Drama</div>
+          </div>
+          <div class="quick-action" onclick="goto('screen-rewards')">
+            <div class="qa-icon" style="background:rgba(255,184,0,0.12);">🎁</div>
+            <div class="qa-label">Rewards</div>
+          </div>
+        </div>
+
+        <!-- Offers -->
+        <div class="divider"></div>
+        <div class="section-title flex-between">Offers & Cashback <span style="font-size:12px; color:var(--accent); font-family:var(--font2); cursor:pointer; " onclick="goto('screen-offers')">View all →</span></div>
+        <div class="scroll-row">
+          <div class="offer-card" style="background: linear-gradient(135deg, #1a0d2e, #2d1a4a); border:1px solid rgba(108,99,255,0.3); width:220px;" onclick="goto('screen-offers')">
+            <div class="tag tag-blue" style="margin-bottom:8px;">CASHBACK</div>
+            <div class="offer-title">Flat ₹50 back</div>
+            <div class="offer-sub">On first electricity bill payment</div>
+            <div class="offer-btn" style="color:var(--accent2);">Grab Now</div>
+          </div>
+          <div class="offer-card" style="background: linear-gradient(135deg, #0d2a14, #1a4a24); border:1px solid rgba(0,196,140,0.3); width:200px;" onclick="goto('screen-offers')">
+            <div class="tag tag-green" style="margin-bottom:8px;">REWARD</div>
+            <div class="offer-title">Earn 2x Coins</div>
+            <div class="offer-sub">On all UPI payments today</div>
+            <div class="offer-btn" style="color:var(--green);">Activate</div>
+          </div>
+          <div class="offer-card" style="background: linear-gradient(135deg, #2a1500, #4a2800); border:1px solid rgba(255,184,0,0.3); width:200px;" onclick="goto('screen-offers')">
+            <div class="tag tag-gold" style="margin-bottom:8px;">LOAN</div>
+            <div class="offer-title">Pre-approved ₹50K</div>
+            <div class="offer-sub">Instant personal loan @ 12%</div>
+            <div class="offer-btn" style="color:var(--gold);">Apply Now</div>
+          </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="divider"></div>
+        <div class="section-title flex-between">Recent Transactions <span style="font-size:12px; color:var(--accent); font-family:var(--font2); cursor:pointer;" onclick="goto('screen-txnhistory')">View all →</span></div>
+        <div class="card">
+          <div class="txn-item" onclick="goto('screen-txndetail')">
+            <div class="txn-icon" style="background:rgba(0,196,140,0.12);">💳</div>
+            <div>
+              <div class="txn-name">Salary Credit</div>
+              <div class="txn-meta">Dec 1, 2024 • 10:32 AM</div>
+            </div>
+            <div class="txn-amount credit">+₹45,000</div>
+          </div>
+          <div class="txn-item" onclick="goto('screen-txndetail')">
+            <div class="txn-icon" style="background:rgba(255,184,0,0.12);">⚡</div>
+            <div>
+              <div class="txn-name">BSES Electricity</div>
+              <div class="txn-meta">Nov 30 • 3:12 PM</div>
+            </div>
+            <div class="txn-amount debit">-₹1,240</div>
+          </div>
+          <div class="txn-item" onclick="goto('screen-txndetail')">
+            <div class="txn-icon" style="background:rgba(0,212,255,0.12);">🛍️</div>
+            <div>
+              <div class="txn-name">Zomato Order</div>
+              <div class="txn-meta">Nov 29 • 8:45 PM</div>
+            </div>
+            <div class="txn-amount debit">-₹349</div>
+          </div>
+          <div class="txn-item" onclick="goto('screen-txndetail')">
+            <div class="txn-icon" style="background:rgba(108,99,255,0.12);">👤</div>
+            <div>
+              <div class="txn-name">Priya Sharma</div>
+              <div class="txn-meta">Nov 28 • 6:20 PM</div>
+            </div>
+            <div class="txn-amount credit">+₹2,000</div>
+          </div>
+        </div>
+
+        <!-- Micro Drama banner -->
+        <div class="divider"></div>
+        <div class="section-title">🎬 Micro Drama</div>
+        <div class="drama-banner" onclick="goto('screen-drama')">
+          <div class="drama-thumb">🎭</div>
+          <div class="drama-info">
+            <div class="drama-tag">🔥 Trending Now</div>
+            <div class="drama-name">Love at First Swipe</div>
+            <div class="drama-meta">Episode 3 · 4 min · Romance</div>
+            <div class="drama-play-btn">▶ Watch Now</div>
+          </div>
+        </div>
+
+        <div style="height:20px;"></div>
+      </div>
+    </div>
+
+    <!-- Bottom Nav -->
+                      <div class="bottom-nav2">
+        <div class="nav2-item nav2-active" onclick="goto('screen-home')">
+          <div class="nav2-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M5 10.5L12 4L19 10.5V19H15V14H9V19H5V10.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" fill="none"/></svg>
+          </div>
+          <div class="nav2-label">Home</div>
+        </div>
+        <div class="nav2-item" onclick="goto('screen-loans')">
+          <div class="nav2-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3L20 7V12C20 16.4 16.5 20.5 12 21C7.5 20.5 4 16.4 4 12V7L12 3Z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linejoin="round"/><path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="nav2-label">Loans</div>
+        </div>
+        <div class="nav2-scan" onclick="goto('screen-scan')">
+          <div class="nav2-scan-ring"></div>
+          <div class="nav2-scan-ring nav2-scan-ring2"></div>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path d="M3 9V5.5C3 4.12 4.12 3 5.5 3H9" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M15 3H18.5C19.88 3 21 4.12 21 5.5V9" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M21 15V18.5C21 19.88 19.88 21 18.5 21H15" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M9 21H5.5C4.12 21 3 19.88 3 18.5V15" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+            <rect x="7" y="7" width="4" height="4" rx="0.8" fill="white"/>
+            <rect x="13" y="7" width="4" height="4" rx="0.8" fill="white"/>
+            <rect x="7" y="13" width="4" height="4" rx="0.8" fill="white"/>
+            <circle cx="15" cy="15" r="1.1" fill="white"/>
+            <circle cx="17.5" cy="15" r="1.1" fill="white"/>
+            <circle cx="15" cy="17.5" r="1.1" fill="white"/>
+            <circle cx="17.5" cy="17.5" r="1.1" fill="white"/>
+          </svg>
+          <div class="nav2-scan-label">Scan & Pay</div>
+        </div>
+        <div class="nav2-item" onclick="goto('screen-drama')">
+          <div class="nav2-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="2" y="6" width="20" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M2 10H22" stroke="currentColor" stroke-width="1.8"/><path d="M7 6V4M12 6V4M17 6V4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 13.5L15 16L10 18.5V13.5Z" fill="currentColor"/></svg>
+          </div>
+          <div class="nav2-label">Drama</div>
+        </div>
+        <div class="nav2-item" onclick="goto('screen-profile')">
+          <div class="nav2-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M5 20C5 16.7 8.1 14 12 14C15.9 14 19 16.7 19 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>
+          </div>
+          <div class="nav2-label">Profile</div>
+        </div>
+      </div>
+  </div>
+
+  <!-- ============ PAYMENTS ============ -->
+  <div class="screen" id="screen-payments">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="screen-header">
+      <div class="back-btn" onclick="goto('screen-home')">←</div>
+      <div class="screen-header-title">Payments</div>
+    </div>
+    <div class="scroll-content" style="padding:0 20px;">
+      <div class="pay-options">
+        <div class="pay-option" onclick="goto('screen-sendmoney')">
+          <div class="pay-opt-icon" style="background:rgba(0,212,255,0.12);">💸</div>
+          <div><div class="pay-opt-title">Send Money</div><div class="pay-opt-sub">Transfer to UPI, Mobile or Bank</div></div>
+          <div class="chevron">›</div>
+        </div>
+        <div class="pay-option" onclick="goto('screen-requestmoney')">
+          <div class="pay-opt-icon" style="background:rgba(0,196,140,0.12);">📥</div>
+          <div><div class="pay-opt-title">Request Money</div><div class="pay-opt-sub">Request from friends & family</div></div>
+          <div class="chevron">›</div>
+        </div>
+        <div class="pay-option" onclick="goto('screen-scan')">
+          <div class="pay-opt-icon" style="background:rgba(108,99,255,0.12);">📷</div>
+          <div><div class="pay-opt-title">Scan & Pay</div><div class="pay-opt-sub">Scan any QR code to pay</div></div>
+          <div class="chevron">›</div>
+        </div>
+        <div class="pay-option" onclick="goto('screen-bills')">
+          <div class="pay-opt-icon" style="background:rgba(255,184,0,0.12);">🧾</div>
+          <div><div class="pay-opt-title">Bill Payments</div><div class="pay-opt-sub">Electricity, DTH, Gas & more</div></div>
+          <div class="chevron">›</div>
+        </div>
+        <div class="pay-option" onclick="goto('screen-recharge')">
+          <div class="pay-opt-icon" style="background:rgba(255,77,109,0.12);">📱</div>
+          <div><div class="pay-opt-title">Mobile Recharge</div><div class="pay-opt-sub">All operators supported</div></div>
+          <div class="chevron">›</div>
+        </div>
+        <div class="pay-option" onclick="goto('screen-txnhistory')">
+          <div class="pay-opt-icon" style="background:rgba(0,180,216,0.12);">📊</div>
+          <div><div class="pay-opt-title">Transaction History</div><div class="pay-opt-sub">View all past payments</div></div>
+          <div class="chevron">›</div>
+        </div>
+      </div>
+    </div>
+                      <div class="bottom-nav2">
+        <div class="nav2-item nav2-active" onclick="goto('screen-home')">
+          <div class="nav2-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M5 10.5L12 4L19 10.5V19H15V14H9V19H5V10.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" fill="none"/></svg>
+          </div>
+          <div class="nav2-label">Home</div>
+        </div>
+        <div class="nav2-item" onclick="goto('screen-loans')">
+          <div class="nav2-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3L20 7V12C20 16.4 16.5 20.5 12 21C7.5 20.5 4 16.4 4 12V7L12 3Z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linejoin="round"/><path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="nav2-label">Loans</div>
+        </div>
+        <div class="nav2-scan" onclick="goto('screen-scan')">
+          <div class="nav2-scan-ring"></div>
+          <div class="nav2-scan-ring nav2-scan-ring2"></div>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path d="M3 9V5.5C3 4.12 4.12 3 5.5 3H9" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M15 3H18.5C19.88 3 21 4.12 21 5.5V9" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M21 15V18.5C21 19.88 19.88 21 18.5 21H15" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M9 21H5.5C4.12 21 3 19.88 3 18.5V15" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+            <rect x="7" y="7" width="4" height="4" rx="0.8" fill="white"/>
+            <rect x="13" y="7" width="4" height="4" rx="0.8" fill="white"/>
+            <rect x="7" y="13" width="4" height="4" rx="0.8" fill="white"/>
+            <circle cx="15" cy="15" r="1.1" fill="white"/>
+            <circle cx="17.5" cy="15" r="1.1" fill="white"/>
+            <circle cx="15" cy="17.5" r="1.1" fill="white"/>
+            <circle cx="17.5" cy="17.5" r="1.1" fill="white"/>
+          </svg>
+          <div class="nav2-scan-label">Scan & Pay</div>
+        </div>
+        <div class="nav2-item" onclick="goto('screen-drama')">
+          <div class="nav2-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="2" y="6" width="20" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M2 10H22" stroke="currentColor" stroke-width="1.8"/><path d="M7 6V4M12 6V4M17 6V4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 13.5L15 16L10 18.5V13.5Z" fill="currentColor"/></svg>
+          </div>
+          <div class="nav2-label">Drama</div>
+        </div>
+        <div class="nav2-item" onclick="goto('screen-profile')">
+          <div class="nav2-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M5 20C5 16.7 8.1 14 12 14C15.9 14 19 16.7 19 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>
+          </div>
+          <div class="nav2-label">Profile</div>
+        </div>
+      </div>
+  </div>
+
+  <!-- ============ SEND MONEY ============ -->
+  <div class="screen" id="screen-sendmoney">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="screen-header">
+      <div class="back-btn" onclick="goto('screen-payments')">←</div>
+      <div class="screen-header-title">Send Money</div>
+    </div>
+    <div class="scroll-content" style="padding:0 20px;">
+      <input class="input-field" placeholder="🔍  Search by name, phone or UPI ID" style="margin-bottom:16px;">
+      <div class="section-title">Recent Contacts</div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div class="pay-option" onclick="goto('screen-enteramount')">
+          <div style="width:44px; height:44px; background:linear-gradient(135deg,#FF6B6B,#FF4081); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:white; flex-shrink:0;">P</div>
+          <div><div class="pay-opt-title">Priya Sharma</div><div class="pay-opt-sub">priya@finshell · ₹2,000 last sent</div></div>
+          <div class="chevron">›</div>
+        </div>
+        <div class="pay-option" onclick="goto('screen-enteramount')">
+          <div style="width:44px; height:44px; background:linear-gradient(135deg,#4ECDC4,#2196F3); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:white; flex-shrink:0;">R</div>
+          <div><div class="pay-opt-title">Rahul Mehta</div><div class="pay-opt-sub">rahul@upi · ₹500 last sent</div></div>
+          <div class="chevron">›</div>
+        </div>
+        <div class="pay-option" onclick="goto('screen-enteramount')">
+          <div style="width:44px; height:44px; background:linear-gradient(135deg,#A8E063,#56AB2F); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:white; flex-shrink:0;">S</div>
+          <div><div class="pay-opt-title">Sneha Gupta</div><div class="pay-opt-sub">sneha@okaxis · ₹1,500 last sent</div></div>
+          <div class="chevron">›</div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section-title">Send to UPI ID</div>
+      <div style="display:flex; gap:8px;">
+        <input class="input-field" placeholder="Enter UPI ID" style="flex:1;">
+        <button style="background:linear-gradient(135deg,var(--accent),var(--accent2)); border:none; border-radius:10px; padding:0 16px; color:white; font-weight:700; cursor:pointer; font-family:var(--font);" onclick="goto('screen-enteramount')">Verify</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ENTER AMOUNT ============ -->
+  <div class="screen" id="screen-enteramount">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="screen-header">
+      <div class="back-btn" onclick="goto('screen-sendmoney')">←</div>
+      <div class="screen-header-title">Enter Amount</div>
+    </div>
+    <div class="amount-display">
+      <div class="amount-to">Paying to</div>
+      <div class="amount-to-name">Priya Sharma · priya@finshell</div>
+      <div class="amount-input-wrap">
+        <div class="currency-sym">₹</div>
+        <input class="amount-big-input" type="number" placeholder="0" value="500">
+      </div>
+      <div style="display:flex; gap:8px; justify-content:center; margin-top:16px; flex-wrap:wrap;">
+        <div style="background:var(--surface2); border:1px solid var(--border); border-radius:20px; padding:6px 14px; font-size:12px; font-weight:600; color:var(--text2); cursor:pointer; font-family:var(--font2);">₹100</div>
+        <div style="background:var(--surface2); border:1px solid var(--border); border-radius:20px; padding:6px 14px; font-size:12px; font-weight:600; color:var(--text2); cursor:pointer; font-family:var(--font2);">₹500</div>
+        <div style="background:var(--surface2); border:1px solid var(--border); border-radius:20px; padding:6px 14px; font-size:12px; font-weight:600; color:var(--text2); cursor:pointer; font-family:var(--font2);">₹1,000</div>
+        <div style="background:var(--surface2); border:1px solid var(--border); border-radius:20px; padding:6px 14px; font-size:12px; font-weight:600; color:var(--text2); cursor:pointer; font-family:var(--font2);">₹5,000</div>
+      </div>
+      <div style="margin-top:12px;">
+        <input class="input-field" placeholder="Add a note (optional)">
+      </div>
+    </div>
+    <div style="padding:16px 20px; margin-top:auto;">
+      <button class="btn-primary" onclick="showLoading('screen-confirmpay')">Proceed to Pay →</button>
+    </div>
+  </div>
+
+  <!-- ============ CONFIRM PAYMENT ============ -->
+  <div class="screen" id="screen-confirmpay">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="screen-header">
+      <div class="back-btn" onclick="goto('screen-enteramount')">←</div>
+      <div class="screen-header-title">Confirm Payment</div>
+    </div>
+    <div class="scroll-content" style="padding:0 20px;">
+      <div class="card mt16">
+        <div class="text-xs" style="margin-bottom:4px;">Paying To</div>
+        <div style="display:flex; align-items:center; gap:12px; padding:8px 0;">
+          <div style="width:44px; height:44px; background:linear-gradient(135deg,#FF6B6B,#FF4081); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; color:white;">P</div>
+          <div>
+            <div class="text-md">Priya Sharma</div>
+            <div class="text-xs mt4">priya@finshell</div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="flex-between mt8">
+          <div class="text-xs">Amount</div>
+          <div style="font-size:24px; font-weight:800; color:var(--text);">₹500.00</div>
+        </div>
+        <div class="flex-between mt8">
+          <div class="text-xs">Payment Method</div>
+          <div style="font-size:13px; font-weight:600; color:var(--text); font-family:var(--font2);">UPI · arjun@finshell</div>
+        </div>
+        <div class="flex-between mt8">
+          <div class="text-xs">Note</div>
+          <div style="font-size:13px; font-weight:600; color:var(--text); font-family:var(--font2);">Dinner split 🍕</div>
+        </div>
+      </div>
+      <div class="card mt12">
+        <div class="text-xs">Enter UPI PIN to confirm</div>
+        <div class="pin-display mt12">
+          <div class="pin-dot filled" style="background:var(--accent); border-color:var(--accent);"></div>
+          <div class="pin-dot filled" style="background:var(--accent); border-color:var(--accent);"></div>
+          <div class="pin-dot filled" style="background:var(--accent); border-color:var(--accent);"></div>
+          <div class="pin-dot filled" style="background:var(--accent); border-color:var(--accent);"></div>
+          <div class="pin-dot filled" style="background:var(--accent); border-color:var(--accent);"></div>
+          <div class="pin-dot filled" style="background:var(--accent); border-color:var(--accent);"></div>
+        </div>
+        <div class="text-xs text-center">PIN: ●●●●●●</div>
+      </div>
+    </div>
+    <div style="padding:16px 20px;">
+      <button class="btn-primary" onclick="showLoading('screen-paysuccess')">Confirm & Pay ₹500 →</button>
+      <div class="text-xs text-center mt8">🔒 Secured by NPCI UPI</div>
+    </div>
+  </div>
+
+  <!-- ============ PAY SUCCESS ============ -->
+  <div class="screen" id="screen-paysuccess">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="success-container">
+      <div class="success-ring">✅</div>
+      <div class="success-title">Payment Sent!</div>
+      <div class="success-amount">₹500.00</div>
+      <div class="success-sub">To Priya Sharma · priya@finshell</div>
+      <div class="success-txn-id">TXN: FSP2412010043928</div>
+      <div style="margin-top:8px; font-size:13px; color:var(--text2); font-family:var(--font2);">Dec 1, 2024 · 9:30 AM</div>
+      <div class="tag tag-green" style="margin-top:4px;">🎁 ₹5 cashback earned!</div>
+    </div>
+    <div style="padding:16px 20px; display:flex; flex-direction:column; gap:10px;">
+      <button class="btn-primary" onclick="goto('screen-home')">Back to Home</button>
+      <button class="btn-ghost" onclick="goto('screen-txndetail')">View Receipt</button>
+    </div>
+  </div>
+
+  <!-- ============ SCAN & PAY ============ -->
+  <div class="screen" id="screen-scan" style="background:#050D1A;">
+    <div class="status-bar" style="background:transparent;"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0 20px 12px;">
+      <div class="back-btn" onclick="goto('screen-home')" style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.1);">←</div>
+      <div style="font-size:16px;font-weight:700;color:var(--text);">Scan & Pay</div>
+      <div style="width:36px;height:36px;background:rgba(255,255,255,0.08);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;">⚡</div>
+    </div>
+
+    <!-- Camera viewfinder -->
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 24px;gap:20px;">
+
+      <div style="font-size:13px;color:rgba(255,255,255,0.5);font-family:var(--font2);letter-spacing:0.3px;">Point at any UPI QR code to pay instantly</div>
+
+      <!-- QR Frame -->
+      <div id="qr-viewfinder" style="position:relative;width:240px;height:240px;">
+
+        <!-- Dark camera bg -->
+        <div style="position:absolute;inset:0;background:linear-gradient(135deg,#0a1a2e,#0d2040);border-radius:24px;overflow:hidden;">
+          <!-- Simulated camera noise -->
+          <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 40% 40%,rgba(0,180,255,0.05),transparent 70%);"></div>
+        </div>
+
+        <!-- Animated scan beam -->
+        <div id="scan-beam" style="position:absolute;left:12px;right:12px;height:2px;top:20px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.9),rgba(0,212,255,1),rgba(0,212,255,0.9),transparent);border-radius:1px;box-shadow:0 0 12px 3px rgba(0,212,255,0.5);animation:beamSweep 2s ease-in-out infinite;z-index:5;"></div>
+
+        <!-- Corner brackets -->
+        <!-- TL -->
+        <div style="position:absolute;top:0;left:0;width:36px;height:36px;border-top:3px solid var(--accent);border-left:3px solid var(--accent);border-radius:12px 0 0 0;z-index:6;"></div>
+        <!-- TR -->
+        <div style="position:absolute;top:0;right:0;width:36px;height:36px;border-top:3px solid var(--accent);border-right:3px solid var(--accent);border-radius:0 12px 0 0;z-index:6;"></div>
+        <!-- BL -->
+        <div style="position:absolute;bottom:0;left:0;width:36px;height:36px;border-bottom:3px solid var(--accent);border-left:3px solid var(--accent);border-radius:0 0 0 12px;z-index:6;"></div>
+        <!-- BR -->
+        <div style="position:absolute;bottom:0;right:0;width:36px;height:36px;border-bottom:3px solid var(--accent);border-right:3px solid var(--accent);border-radius:0 0 12px 0;z-index:6;"></div>
+
+        <!-- Center QR icon (placeholder for camera) -->
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+          <svg width="80" height="80" viewBox="0 0 100 100" fill="none" opacity="0.18">
+            <!-- QR pattern suggestion -->
+            <rect x="10" y="10" width="28" height="28" rx="4" fill="white"/>
+            <rect x="62" y="10" width="28" height="28" rx="4" fill="white"/>
+            <rect x="10" y="62" width="28" height="28" rx="4" fill="white"/>
+            <rect x="16" y="16" width="16" height="16" rx="2" fill="#050D1A"/>
+            <rect x="68" y="16" width="16" height="16" rx="2" fill="#050D1A"/>
+            <rect x="16" y="68" width="16" height="16" rx="2" fill="#050D1A"/>
+            <rect x="22" y="22" width="4" height="4" fill="white"/>
+            <rect x="74" y="22" width="4" height="4" fill="white"/>
+            <rect x="22" y="74" width="4" height="4" fill="white"/>
+            <rect x="62" y="62" width="8" height="8" rx="1" fill="white"/>
+            <rect x="74" y="62" width="8" height="8" rx="1" fill="white"/>
+            <rect x="62" y="74" width="8" height="8" rx="1" fill="white"/>
+            <rect x="74" y="74" width="8" height="8" rx="1" fill="white"/>
+            <rect x="44" y="10" width="8" height="8" rx="1" fill="white"/>
+            <rect x="10" y="44" width="8" height="8" rx="1" fill="white"/>
+            <rect x="44" y="44" width="8" height="8" rx="1" fill="white"/>
+          </svg>
+        </div>
+
+        <!-- Outer glow -->
+        <div style="position:absolute;inset:-8px;border:1px solid rgba(0,212,255,0.15);border-radius:30px;animation:qrOuterGlow 3s ease-in-out infinite;pointer-events:none;"></div>
+      </div>
+
+      <!-- Scan status badge -->
+      <div id="scan-status" style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);border-radius:20px;padding:8px 18px;display:flex;align-items:center;gap:8px;animation:statusPulse 2s ease-in-out infinite;">
+        <div style="width:7px;height:7px;background:var(--accent);border-radius:50%;animation:dotBounce 1s ease infinite alternate;"></div>
+        <span style="font-size:12px;font-weight:600;color:var(--accent);font-family:var(--font2);">Scanning for QR code...</span>
+      </div>
+
+      <!-- Action row -->
+      <div style="display:flex;gap:12px;width:100%;">
+        <div onclick="goto('screen-enteramount')" style="flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px;text-align:center;cursor:pointer;transition:all 0.2s;">
+          <div style="font-size:20px;margin-bottom:4px;">⌨️</div>
+          <div style="font-size:12px;font-weight:600;color:var(--text);font-family:var(--font2);">Enter UPI ID</div>
+        </div>
+        <div onclick="goto('screen-requestmoney')" style="flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px;text-align:center;cursor:pointer;transition:all 0.2s;">
+          <div style="font-size:20px;margin-bottom:4px;">📲</div>
+          <div style="font-size:12px;font-weight:600;color:var(--text);font-family:var(--font2);">Phone Number</div>
+        </div>
+        <div style="flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px;text-align:center;cursor:pointer;transition:all 0.2s;">
+          <div style="font-size:20px;margin-bottom:4px;">🖼️</div>
+          <div style="font-size:12px;font-weight:600;color:var(--text);font-family:var(--font2);">From Gallery</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- My QR section -->
+    <div style="background:rgba(13,20,36,0.95);border-top:1px solid rgba(255,255,255,0.06);padding:16px 20px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text2);font-family:var(--font2);letter-spacing:0.5px;margin-bottom:10px;">MY QR CODE</div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <!-- QR Code visual -->
+        <div style="width:64px;height:64px;background:white;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:6px;">
+          <svg width="52" height="52" viewBox="0 0 100 100" fill="none">
+            <rect x="8" y="8" width="30" height="30" rx="4" fill="#0A1628"/>
+            <rect x="62" y="8" width="30" height="30" rx="4" fill="#0A1628"/>
+            <rect x="8" y="62" width="30" height="30" rx="4" fill="#0A1628"/>
+            <rect x="14" y="14" width="18" height="18" rx="2" fill="white"/>
+            <rect x="68" y="14" width="18" height="18" rx="2" fill="white"/>
+            <rect x="14" y="68" width="18" height="18" rx="2" fill="white"/>
+            <rect x="20" y="20" width="6" height="6" fill="#0A1628"/>
+            <rect x="74" y="20" width="6" height="6" fill="#0A1628"/>
+            <rect x="20" y="74" width="6" height="6" fill="#0A1628"/>
+            <rect x="62" y="62" width="10" height="10" rx="1" fill="#0A1628"/>
+            <rect x="76" y="62" width="10" height="10" rx="1" fill="#0A1628"/>
+            <rect x="62" y="76" width="10" height="10" rx="1" fill="#0A1628"/>
+            <rect x="76" y="76" width="10" height="10" rx="1" fill="#0A1628"/>
+            <rect x="44" y="8" width="10" height="10" rx="1" fill="#0A1628"/>
+            <rect x="8" y="44" width="10" height="10" rx="1" fill="#0A1628"/>
+            <rect x="44" y="44" width="10" height="10" rx="1" fill="#0A1628"/>
+          </svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:700;color:var(--text);">arjun@finshell</div>
+          <div style="font-size:12px;color:var(--text2);font-family:var(--font2);margin-top:2px;">Arjun Sharma · FinshellPay</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;padding:7px 12px;font-size:11px;font-weight:700;color:white;cursor:pointer;text-align:center;">Share</div>
+          <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:7px 12px;font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;text-align:center;border:1px solid rgba(255,255,255,0.08);">Save</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ BILLS ============ -->
+  <div class="screen" id="screen-bills">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="screen-header">
+      <div class="back-btn" onclick="goto('screen-payments')">←</div>
+      <div class="screen-header-title">Bill Payments</div>
+    </div>
+    <div class="scroll-content" style="padding:0 20px;">
+      <div class="section-title">Select Category</div>
+      <div class="bill-grid">
+        <div class="bill-item" onclick="goto('screen-billprovider')">
+          <div class="bill-icon">⚡</div>
+          <div class="bill-label">Electricity</div>
+        </div>
+        <div class="bill-item" onclick="goto('screen-recharge')">
+          <div class="bill-icon">📱</div>
+          <div class="bill-label">Mobile</div>
+        </div>
+        <div class="bill-item" onclick="goto('screen-billprovider')">
+          <div class="bill-icon">📺</div>
+          <div class="bill-label">DTH</div>
+        </div>
+        <div class="bill-item" onclick="goto('screen-billprovider')">
+          <div class="bill-icon">🌐</div>
+          <div class="bill-label">Broadband</div>
+        </div>
+        <div class="bill-item" onclick="goto('screen-billprovider')">
+          <div class="bill-icon">🔥</div>
+          <div class="bill-label">Gas</div>
+        </div>
+        <div class="bill-item" onclick="goto('screen-billprovider')">
+          <div class="bill-icon">💧</div>
+          <div class="bill-label">Water</div>
+        </div>
+        <div class="bill-item" onclick="goto('screen-billprovider')">
+          <div class="bill-icon">🏠</div>
+          <div class="bill-label">Housing</div>
+        </div>
+        <div class="bill-item" onclick="goto('screen-billprovider')">
+          <div class="bill-icon">🏥</div>
+          <div class="bill-label">Insurance</div>
+        </div>
+        <div class="bill-item" onclick="goto('screen-billprovider')">
+          <div class="bill-icon">🎓</div>
+          <div class="bill-label">Education</div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section-title">Recent Bills</div>
+      <div class="txn-item" onclick="goto('screen-billprovider')">
+        <div class="txn-icon" style="background:rgba(255,184,0,0.12);">⚡</div>
+        <div><div class="txn-name">BSES Rajdhani</div><div class="txn-meta">Consumer: 1209374850</div></div>
+        <div class="txn-amount debit">₹1,240</div>
+      </div>
+      <div class="txn-item" onclick="goto('screen-recharge')">
+        <div class="txn-icon" style="background:rgba(0,212,255,0.12);">📱</div>
+        <div><div class="txn-name">Jio Recharge</div><div class="txn-meta">+91 98765 43210</div></div>
+        <div class="txn-amount debit">₹299</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ BILL PROVIDER ============ -->
+  <div class="screen" id="screen-billprovider">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="screen-header">
+      <div class="back-btn" onclick="goto('screen-bills')">←</div>
+      <div class="screen-header-title">Electricity</div>
+    </div>
+    <div class="scroll-content" style="padding:0 20px;">
+      <div class="section-title">Select Provider</div>
+      <div class="provider-item" onclick="goto('screen-billdetail')">
+        <div class="provider-icon" style="background:rgba(255,184,0,0.12);">⚡</div>
+        <div class="provider-name">BSES Rajdhani</div>
+        <div class="chevron">›</div>
+      </div>
+      <div class="provider-item" onclick="goto('screen-billdetail')">
+        <div class="provider-icon" style="background:rgba(0,212,255,0.12);">⚡</div>
+        <div class="provider-name">BSES Yamuna</div>
+        <div class="chevron">›</div>
+      </div>
+      <div class="provider-item" onclick="goto('screen-billdetail')">
+        <div class="provider-icon" style="background:rgba(0,196,140,0.12);">⚡</div>
+        <div class="provider-name">Tata Power Delhi</div>
+        <div class="chevron">›</div>
+      </div>
+      <div class="provider-item" onclick="goto('screen-billdetail')">
+        <div class="provider-icon" style="background:rgba(108,99,255,0.12);">⚡</div>
+        <div class="provider-name">MSEDCL Maharashtra</div>
+        <div class="chevron">›</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ BILL DETAIL ============ -->
+  <div class="screen" id="screen-billdetail">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="screen-header">
+      <div class="back-btn" onclick="goto('screen-billprovider')">←</div>
+      <div class="screen-header-title">BSES Rajdhani</div>
+    </div>
+    <div class="scroll-content" style="padding:0 20px;">
+      <div class="card mt16">
+        <div style="font-size:12px; font-weight:600; color:var(--text2); margin-bottom:8px; font-family:var(--font2);">CONSUMER NUMBER</div>
+        <input class="input-field" placeholder="Enter consumer number" value="1209374850">
+        <button class="btn-primary" style="margin-top:12px;" onclick="showLoading('screen-fetchedbill')">Fetch Bill →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ FETCHED BILL ============ -->
+  <div class="screen" id="screen-fetchedbill">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="screen-header">
+      <div class="back-btn" onclick="goto('screen-billdetail')">←</div>
+      <div class="screen-header-title">Bill Details</div>
+    </div>
+    <div class="scroll-content" style="padding:0 20px;">
+      <div class="card mt16">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+          <div style="width:44px; height:44px; background:rgba(255,184,0,0.12); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px;">⚡</div>
+          <div><div class="text-md">BSES Rajdhani</div><div class="text-xs mt4">Consumer: 1209374850</div></div>
+        </div>
+        <div class="divider"></div>
+        <div class="flex-between mt8"><div class="text-xs">Bill Period</div><div class="text-sm text-bold">Oct – Nov 2024</div></div>
+        <div class="flex-between mt8"><div class="text-xs">Units Consumed</div><div class="text-sm text-bold">248 kWh</div></div>
+        <div class="flex-between mt8"><div class="text-xs">Due Date</div><div class="text-sm" style="color:var(--red); font-weight:700;">Dec 15, 2024</div></div>
+        <div class="flex-between mt8"><div class="text-xs">Bill Amount</div><div style="font-size:24px; font-weight:800; color:var(--text);">₹1,240</div></div>
+      </div>
+      <div class="tag tag-green" style="margin:12px 0; display:block;">🎁 ₹15 cashback on electricity payment</div>
+    </div>
+    <div style="padding:16px 20px;">
+      <button class="btn-primary" onclick="showLoading('screen-paysuccess')">Pay ₹1,240 →</button>
+    </div>
+  </div>
+
+  <!-- ============ RECHARGE ============ -->
+  <div class="screen" id="screen-recharge">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="screen-header">
+      <div class="back-btn" onclick="goto('screen-bills')">←</div>
+      <div class="screen-header-title">Mobile Recharge</div>
+    </div>
+    <div class="scroll-content" style="padding:0 20px;">
+      <div class="card mt8">
+        <input class="input-field" placeholder="Enter mobile number" value="+91 98765 43210">
+        <div style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
+          <div style="background:linear-gradient(135deg,#00B4D8,#0096C7); border-radius:20px; padding:6px 14px; font-size:12px; font-weight:700; color:white; cursor:pointer;">Jio</div>
+          <div style="background:linear-gradient(135deg,#E53935,#B71C1C); border-radius:20px; padding:6px 14px; font-size:12px; font-weight:700; color:white; cursor:pointer;">Airtel</div>
+          <div style="background:linear-gradient(135deg,#E91E63,#AD1457); border-radius:20px; padding:6px 14px; font-size:12px; font-weight:700; color:white; cursor:pointer;">Vi</div>
+          <div style="background:linear-gradient(135deg,#00796B,#004D40); border-radius:20px; padding:6px 14px; font-size:12px; font-weight:700; color:white; cursor:pointer;">BSNL</div>
+        </div>
+      </div>
+      <div class="section-title" style="margin-top:16px;">Popular Plans</div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div class="card" style="cursor:pointer;" onclick="goto('screen-confirmpay')">
+          <div class="flex-between"><div><div class="text-md">₹299</div><div class="text-xs mt4">28 days · 1.5GB/day · Unlimited calls</div></div><div class="tag tag-blue">Best Value</div></div>
+        </div>
+        <div class="card" style="cursor:pointer;" onclick="goto('screen-confirmpay')">
+          <div class="flex-between"><div><div class="text-md">₹599</div><div class="text-xs mt4">56 days · 2GB/day · Unlimited calls</div></div><div class="tag tag-green">Popular</div></div>
+        </div>
+        <div class="card" style="cursor:pointer;" onclick="goto('screen-confirmpay')">
+          <div class="flex-between"><div><div class="text-md">₹999</div><div class="text-xs mt4">84 days · 2.5GB/day + OTT Benefits</div></div><div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ REQUEST MONEY ============ -->
+  <div class="screen" id="screen-requestmoney">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="screen-header">
+      <div class="back-btn" onclick="goto('screen-home')">←</div>
+      <div class="screen-header-title">Request Money</div>
+    </div>
+    <div class="scroll-content" style="padding:0 20px;">
+      <input class="input-field" placeholder="🔍  Search contacts" style="margin-bottom:16px;">
+      <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
+        <div class="pay-option" onclick="goto('screen-requestsent')">
+          <div style="width:44px; height:44px; background:linear-gradient(135deg,#FF6B6B,#FF4081); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:white;">P</div>
+          <div><div class="pay-opt-title">Priya Sharma</div><div class="pay-opt-sub">priya@finshell</div></div>
+          <div class="chevron">›</div>
+        </div>
+        <div class="pay-option" onclick="goto('screen-requestsent')">
+          <div style="width:44px; height:44px; background:linear-gradient(135deg,#4ECDC4,#2196F3); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:white;">R</div>
+          <div><div class="pay-opt-title">Rahul Mehta</div><div class="pay-opt-sub">rahul@upi</div></div>
+          <div class="chevron">›</div>
+        </div>
+      </div>
+      <div class="section-title">Enter Amount to Request</div>
+      <div class="amount-input-wrap" style="margin-bottom:16px;">
+        <div class="currency-sym">₹</div>
+        <input class="amount-big-input" type="number" placeholder="0" value="2000">
+      </div>
+      <button class="btn-primary" onclick="goto('screen-requestsent')">Send Request →</button>
+    </div>
+  </div>
+
+  <!-- ============ REQUEST SENT ============ -->
+  <div class="screen" id="screen-requestsent">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="success-container">
+      <div class="success-ring" style="border-color:var(--accent2); background:rgba(108,99,255,0.12);">📨</div>
+      <div class="success-title">Request Sent!</div>
+      <div class="success-amount" style="color:var(--accent2);">₹2,000</div>
+      <div class="success-sub">Request sent to Priya Sharma</div>
+      <div class="text-xs">You'll be notified when paid</div>
+    </div>
+    <div style="padding:16px 20px;">
+      <button class="btn-primary" onclick="goto('screen-home')">Back to Home</button>
+    </div>
+  </div>
+
+  <!-- ============ TRANSACTION HISTORY ============ -->
+  <div class="screen" id="screen-txnhistory">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="screen-header">
+      <div class="back-btn" onclick="goto('screen-payments')">←</div>
+      <div class="screen-header-title">Transaction History</div>
+    </div>
+    <div class="scroll-content" style="padding:0 20px;">
+      <div style="display:flex; gap:8px; margin-bottom:16px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none;">
+        <div style="background:var(--accent); border-radius:20px; padding:6px 14px; font-size:12px; font-weight:700; color:white; white-space:nowrap; cursor:pointer;">All</div>
+        <div style="background:var(--surface2); border:1px solid var(--border); border-radius:20px; padding:6px 14px; font-size:12px; font-weight:600; color:var(--text2); white-space:nowrap; cursor:pointer;">Sent</div>
+        <div style="background:var(--surface2); border:1px solid var(--border); border-radius:20px; padding:6px 14px; font-size:12px; font-weight:600; color:var(--text2); white-space:nowrap; cursor:pointer;">Received</div>
+        <div style="background:var(--surface2); border:1px solid var(--border); border-radius:20px; padding:6px 14px; font-size:12px; font-weight:600; color:var(--text2); white-space:nowrap; cursor:pointer;">Bills</div>
+        <div style="background:var(--surface2); border:1px solid var(--border); border-radius:20px; padding:6px 14px; font-size:12px; font-weight:600; color:var(--text2); white-space:nowrap; cursor:pointer;">Recharge</div>
+      </div>
+      <div style="font-size:12px; font-weight:700; color:var(--text2); font-family:var(--font2); margin-bottom:8px; letter-spacing:0.5px;">DECEMBER 2024</div>
+      <div class="card">
+        <div class="txn-item" onclick="goto('screen-txndetail')"><div class="txn-icon" style="background:rgba(0,196,140,0.12);">💳</div><div><div class="txn-name">Salary Credit</div><div class="txn-meta">Dec 1 · 10:32 AM</div></div><div class="txn-amount credit">+₹45,000</div></div>
+        <div class="txn-item" onclick="goto('screen-txndetail')"><div class="txn-icon" style="background:rgba(255,184,0,0.12);">⚡</div><div><div class="txn-name">BSES Electricity</div><div class="txn-meta">Nov 30 · 3:12 PM</div></div><div class="txn-amount debit">-₹1,240</div></div>
+        <div class="txn-item" onclick="goto('screen-txndetail')"><div class="txn-icon" style="background:rgba(0,212,255,0.12);">📱</div><div><div class="txn-name">Jio Recharge</div><div class="txn-meta">Nov 29 · 11:00 AM</div></div><div class="txn-amount debit">-₹299</div></div>
+        <div class="txn-item" onclick="goto('screen-txndetail')"><div class="txn-icon" style="background:rgba(108,99,255,0.12);">👤</div><div><div class="txn-name">Priya Sharma</div><div class="txn-meta">Nov 28 · 6:20 PM</div></div><div class="txn-amount credit">+₹2,000</div></div>
+        <div class="txn-item" onclick="goto('screen-txndetail')"><div class="txn-icon" style="background:rgba(255,77,109,0.12);">🛍️</div><div><div class="txn-name">Amazon Pay</div><div class="txn-meta">Nov 27 · 2:45 PM</div></div><div class="txn-amount debit">-₹1,899</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TRANSACTION DETAIL ============ -->
+  <div class="screen" id="screen-txndetail">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="screen-header">
+      <div class="back-btn" onclick="goto('screen-txnhistory')">←</div>
+      <div class="screen-header-title">Transaction Detail</div>
+    </div>
+    <div class="scroll-content" style="padding:0 20px;">
+      <div style="text-align:center; padding:28px 0;">
+        <div style="font-size:48px; margin-bottom:8px;">✅</div>
+        <div style="font-size:32px; font-weight:800; color:var(--green);">+₹45,000</div>
+        <div style="font-size:14px; color:var(--text2); font-family:var(--font2); margin-top:4px;">Salary Credit • Dec 1, 2024</div>
+      </div>
+      <div class="card">
+        <div class="flex-between" style="padding:10px 0; border-bottom:1px solid var(--border);"><div class="text-xs">Status</div><div class="tag tag-green">Success</div></div>
+        <div class="flex-between" style="padding:10px 0; border-bottom:1px solid var(--border);"><div class="text-xs">Transaction ID</div><div style="font-size:12px; font-weight:600; color:var(--text); font-family:var(--font2);">FSP2412010043928</div></div>
+        <div class="flex-between" style="padding:10px 0; border-bottom:1px solid var(--border);"><div class="text-xs">From</div><div style="font-size:13px; font-weight:600; color:var(--text); font-family:var(--font2);">Employer Co. Ltd</div></div>
+        <div class="flex-between" style="padding:10px 0; border-bottom:1px solid var(--border);"><div class="text-xs">To</div><div style="font-size:13px; font-weight:600; color:var(--text); font-family:var(--font2);">arjun@finshell</div></div>
+        <div class="flex-between" style="padding:10px 0;"><div class="text-xs">Date & Time</div><div style="font-size:13px; font-weight:600; color:var(--text); font-family:var(--font2);">Dec 1, 2024 · 10:32 AM</div></div>
+      </div>
+      <button class="btn-ghost" style="margin-top:12px;">Download Receipt 📄</button>
+    </div>
+  </div>
+
+  <!-- ============ ADD MONEY ============ -->
+  <div class="screen" id="screen-addmoney">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="screen-header">
+      <div class="back-btn" onclick="goto('screen-home')">←</div>
+      <div class="screen-header-title">Add Money</div>
+    </div>
+    <div class="scroll-content" style="padding:0 20px;">
+      <div class="card mt16">
+        <div class="text-xs" style="margin-bottom:8px;">SELECT AMOUNT</div>
+        <div class="amount-input-wrap" style="margin-bottom:12px;">
+          <div class="currency-sym">₹</div>
+          <input class="amount-big-input" type="number" value="1000">
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <div style="background:var(--surface3); border:1px solid var(--border); border-radius:20px; padding:6px 14px; font-size:12px; font-weight:600; color:var(--text2); cursor:pointer; font-family:var(--font2);">₹500</div>
+          <div style="background:var(--surface3); border:1px solid var(--border); border-radius:20px; padding:6px 14px; font-size:12px; font-weight:600; color:var(--text2); cursor:pointer; font-family:var(--font2);">₹1,000</div>
+          <div style="background:var(--surface3); border:1px solid var(--border); border-radius:20px; padding:6px 14px; font-size:12px; font-weight:600; color:var(--text2); cursor:pointer; font-family:var(--font2);">₹2,000</div>
+          <div style="background:var(--surface3); border:1px solid var(--border); border-radius:20px; padding:6px 14px; font-size:12px; font-weight:600; color:var(--text2); cursor:pointer; font-family:var(--font2);">₹5,000</div>
+        </div>
+      </div>
+      <div class="section-title" style="margin-top:16px;">Add from Bank Account</div>
+      <div class="provider-item" onclick="goto('screen-confirmpay')">
+        <div class="provider-icon" style="background:rgba(0,112,224,0.12);">🏦</div>
+        <div><div class="provider-name">HDFC Bank</div><div class="text-xs mt4">••••4512 · Savings</div></div>
+        <div class="chevron">›</div>
+      </div>
+      <div class="provider-item" onclick="goto('screen-confirmpay')">
+        <div class="provider-icon" style="background:rgba(255,165,0,0.12);">🏦</div>
+        <div><div class="provider-name">SBI Bank</div><div class="text-xs mt4">••••8834 · Savings</div></div>
+        <div class="chevron">›</div>
+      </div>
+      <button class="btn-primary" style="margin-top:16px;" onclick="showLoading('screen-home')">Add ₹1,000 →</button>
+    </div>
+  </div>
+
+  <!-- ============ INSURANCE ============ -->
+  <div class="screen" id="screen-insurance">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="screen-header">
+      <div class="back-btn" onclick="goto('screen-home')">←</div>
+      <div class="screen-header-title">Insurance</div>
+    </div>
+    <div class="scroll-content" style="padding:0 20px;">
+      <div class="loan-card" style="background:linear-gradient(135deg,#1a0f2e,#0e1a35);" onclick="goto('screen-home')">
+        <div class="loan-card-icon" style="background:rgba(255,77,109,0.12);">🛡️</div>
+        <div><div class="loan-card-title">Health Insurance</div><div class="loan-card-sub">Coverage up to ₹10L · Starting ₹299/mo</div></div>
+        <div style="margin-left:auto; text-align:right;"><div class="loan-card-rate" style="font-size:14px; color:var(--red);">₹299<span style="font-size:10px;">/mo</span></div></div>
+      </div>
+      <div class="loan-card" style="background:linear-gradient(135deg,#0d2b1a,#1a4a2a);" onclick="goto('screen-home')">
+        <div class="loan-card-icon" style="background:rgba(0,196,140,0.12);">🚗</div>
+        <div><div class="loan-card-title">Car Insurance</div><div class="loan-card-sub">Comprehensive · Starting ₹499/mo</div></div>
+        <div style="margin-left:auto; text-align:right;"><div class="loan-card-rate" style="font-size:14px; color:var(--green);">₹499<span style="font-size:10px;">/mo</span></div></div>
+      </div>
+      <div class="loan-card" style="background:linear-gradient(135deg,#0d1f3c,#1a3a5c);" onclick="goto('screen-home')">
+        <div class="loan-card-icon" style="background:rgba(0,212,255,0.12);">✈️</div>
+        <div><div class="loan-card-title">Travel Insurance</div><div class="loan-card-sub">Global coverage · ₹49/day</div></div>
+        <div style="margin-left:auto; text-align:right;"><div class="loan-card-rate" style="font-size:14px; color:var(--accent);">₹49<span style="font-size:10px;">/day</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ LOANS ============ -->
+  <div class="screen" id="screen-loans">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="scroll-content">
+      <div style="padding:16px 20px 0;">
+        <div class="section-title" style="font-size:22px; margin-bottom:4px;">Loans & Credit 💳</div>
+        <div class="text-xs">Instant approvals, minimal paperwork</div>
+      </div>
+      <div style="padding:16px 20px;">
+        <div class="loan-hero">
+          <div class="loan-hero-label">Pre-approved Limit</div>
+          <div class="loan-hero-amount">₹5,00,000</div>
+          <div class="loan-hero-sub">Based on your credit score of <strong style="color:var(--green);">762 ✓</strong></div>
+          <div style="margin-top:12px;"><div class="progress-wrap"><div class="progress-bar" style="width:76%;"></div></div><div class="flex-between mt4"><div class="text-xs">₹0</div><div class="text-xs">₹5,00,000</div></div></div>
+        </div>
+
+        <div class="loan-card" style="background:linear-gradient(135deg,#0d2137,#1a3a5c); border:1px solid rgba(0,180,216,0.2);" onclick="goto('screen-applyloan')">
+          <div class="loan-card-icon" style="background:rgba(0,212,255,0.12);">💰</div>
+          <div><div class="loan-card-title">Personal Loan</div><div class="loan-card-sub">Up to ₹5L · Instant disbursement</div></div>
+          <div style="margin-left:auto; text-align:right;"><div class="loan-card-rate">12%</div><div class="loan-card-rate-label">per annum</div></div>
+        </div>
+
+        <div class="loan-card" style="background:linear-gradient(135deg,#1a0d2e,#2d1a4a); border:1px solid rgba(108,99,255,0.2);" onclick="goto('screen-bnpl')">
+          <div class="loan-card-icon" style="background:rgba(108,99,255,0.12);">🛍️</div>
+          <div><div class="loan-card-title">Buy Now Pay Later</div><div class="loan-card-sub">0% interest · Up to ₹50,000</div></div>
+          <div style="margin-left:auto; text-align:right;"><div class="loan-card-rate" style="color:var(--accent2);">0%</div><div class="loan-card-rate-label">interest</div></div>
+        </div>
+
+        <div class="loan-card" style="background:linear-gradient(135deg,#0d2b1a,#1a4a2a); border:1px solid rgba(0,196,140,0.2);" onclick="goto('screen-applyloan')">
+          <div class="loan-card-icon" style="background:rgba(0,196,140,0.12);">🔄</div>
+          <div><div class="loan-card-title">Credit Line</div><div class="loan-card-sub">Flexible limit · Pay what you use</div></div>
+          <div style="margin-left:auto; text-align:right;"><div class="loan-card-rate" style="color:var(--green);">1.5%</div><div class="loan-card-rate-label">per month</div></div>
+        </div>
+
+        <div class="loan-card" style="background:linear-gradient(135deg,#2a1500,#4a2800); border:1px solid rgba(255,184,0,0.2);" onclick="goto('screen-home')">
+          <div class="loan-card-icon" style="background:rgba(255,184,0,0.12);">📈</div>
+          <div><div class="loan-card-title">Gold Loan</div><div class="loan-card-sub">Against gold jewellery · 7% p.a.</div></div>
+          <div style="margin-left:auto; text-align:right;"><div class="loan-card-rate" style="color:var(--gold);">7%</div><div class="loan-card-rate-label">per annum</div></div>
+        </div>
+
+        <div class="section-title" style="margin-top:4px;">Active Loans</div>
+        <div class="card">
+          <div class="flex-between"><div class="text-md">Personal Loan</div><div class="tag tag-green">Active</div></div>
+          <div class="flex-between mt8"><div class="text-xs">Outstanding</div><div style="font-size:18px; font-weight:800; color:var(--text);">₹38,000</div></div>
+          <div class="progress-wrap mt8"><div class="progress-bar" style="width:24%;"></div></div>
+          <div class="flex-between mt4"><div class="text-xs">Paid ₹12,000</div><div class="text-xs">Total ₹50,000</div></div>
+          <div class="flex-between mt8"><div class="text-xs">Next EMI: Dec 10</div><div class="tag tag-blue">₹4,500</div></div>
+        </div>
+      </div>
+    </div>
+                      <div class="bottom-nav2">
+        <div class="nav2-item nav2-active" onclick="goto('screen-home')">
+          <div class="nav2-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M5 10.5L12 4L19 10.5V19H15V14H9V19H5V10.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" fill="none"/></svg>
+          </div>
+          <div class="nav2-label">Home</div>
+        </div>
+        <div class="nav2-item" onclick="goto('screen-loans')">
+          <div class="nav2-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3L20 7V12C20 16.4 16.5 20.5 12 21C7.5 20.5 4 16.4 4 12V7L12 3Z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linejoin="round"/><path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="nav2-label">Loans</div>
+        </div>
+        <div class="nav2-scan" onclick="goto('screen-scan')">
+          <div class="nav2-scan-ring"></div>
+          <div class="nav2-scan-ring nav2-scan-ring2"></div>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path d="M3 9V5.5C3 4.12 4.12 3 5.5 3H9" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M15 3H18.5C19.88 3 21 4.12 21 5.5V9" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M21 15V18.5C21 19.88 19.88 21 18.5 21H15" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M9 21H5.5C4.12 21 3 19.88 3 18.5V15" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+            <rect x="7" y="7" width="4" height="4" rx="0.8" fill="white"/>
+            <rect x="13" y="7" width="4" height="4" rx="0.8" fill="white"/>
+            <rect x="7" y="13" width="4" height="4" rx="0.8" fill="white"/>
+            <circle cx="15" cy="15" r="1.1" fill="white"/>
+            <circle cx="17.5" cy="15" r="1.1" fill="white"/>
+            <circle cx="15" cy="17.5" r="1.1" fill="white"/>
+            <circle cx="17.5" cy="17.5" r="1.1" fill="white"/>
+          </svg>
+          <div class="nav2-scan-label">Scan & Pay</div>
+        </div>
+        <div class="nav2-item" onclick="goto('screen-drama')">
+          <div class="nav2-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="2" y="6" width="20" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M2 10H22" stroke="currentColor" stroke-width="1.8"/><path d="M7 6V4M12 6V4M17 6V4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 13.5L15 16L10 18.5V13.5Z" fill="currentColor"/></svg>
+          </div>
+          <div class="nav2-label">Drama</div>
+        </div>
+        <div class="nav2-item" onclick="goto('screen-profile')">
+          <div class="nav2-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M5 20C5 16.7 8.1 14 12 14C15.9 14 19 16.7 19 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>
+          </div>
+          <div class="nav2-label">Profile</div>
+        </div>
+      </div>
+  </div>
+
+  <!-- ============ APPLY LOAN ============ -->
+  <div class="screen" id="screen-applyloan">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="screen-header">
+      <div class="back-btn" onclick="goto('screen-loans')">←</div>
+      <div class="screen-header-title">Personal Loan</div>
+    </div>
+    <div class="scroll-content" style="padding:0 20px;">
+      <div class="card mt16">
+        <div class="text-xs" style="margin-bottom:8px;">LOAN AMOUNT</div>
+        <div class="amount-input-wrap">
+          <div class="currency-sym">₹</div>
+          <input class="amount-big-input" type="number" value="100000">
+        </div>
+        <input type="range" min="10000" max="500000" step="5000" value="100000" style="width:100%; margin-top:16px; accent-color:var(--accent);">
+        <div class="flex-between mt4"><div class="text-xs">₹10,000</div><div class="text-xs">₹5,00,000</div></div>
+      </div>
+      <div class="card mt12">
+        <div class="section-title" style="margin-bottom:12px; font-size:14px;">Loan Details</div>
+        <div class="flex-between" style="padding:8px 0; border-bottom:1px solid var(--border);"><div class="text-xs">Interest Rate</div><div class="text-sm text-bold">12% p.a.</div></div>
+        <div class="flex-between" style="padding:8px 0; border-bottom:1px solid var(--border);"><div class="text-xs">Tenure</div>
+          <div style="display:flex; gap:6px;">
+            <div style="background:var(--accent); border-radius:20px; padding:4px 10px; font-size:11px; font-weight:700; color:white; cursor:pointer; font-family:var(--font2);">12M</div>
+            <div style="background:var(--surface3); border:1px solid var(--border); border-radius:20px; padding:4px 10px; font-size:11px; font-weight:600; color:var(--text2); cursor:pointer; font-family:var(--font2);">24M</div>
+            <div style="background:var(--surface3); border:1px solid var(--border); border-radius:20px; padding:4px 10px; font-size:11px; font-weight:600; color:var(--text2); cursor:pointer; font-family:var(--font2);">36M</div>
+          </div>
+        </div>
+        <div class="flex-between" style="padding:8px 0;"><div class="text-xs">Monthly EMI</div><div style="font-size:20px; font-weight:800; color:var(--green);">₹8,884</div></div>
+      </div>
+      <button class="btn-primary" style="margin-top:16px;" onclick="goto('screen-eligibility')">Check Eligibility →</button>
+    </div>
+  </div>
+
+  <!-- ============ ELIGIBILITY ============ -->
+  <div class="screen" id="screen-eligibility">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="screen-header">
+      <div class="back-btn" onclick="goto('screen-applyloan')">←</div>
+      <div class="screen-header-title">Eligibility Check</div>
+    </div>
+    <div class="scroll-content" style="padding:0 20px;">
+      <div class="card mt16">
+        <div class="section-title" style="font-size:14px; margin-bottom:12px;">Your Profile Score</div>
+        <div style="text-align:center; padding:16px 0;">
+          <div style="font-size:56px; font-weight:800; color:var(--green);">762</div>
+          <div class="tag tag-green" style="margin-top:8px;">Excellent Credit Score</div>
+        </div>
+        <div class="progress-wrap"><div class="progress-bar" style="width:76%;"></div></div>
+        <div class="flex-between mt4"><div class="text-xs">Poor</div><div class="text-xs">Excellent</div></div>
+      </div>
+      <div class="card mt12">
+        <div class="check-item">
+          <div class="check-icon-wrap" style="background:rgba(0,196,140,0.12);">📋</div>
+          <div><div class="check-label">Credit Score</div><div class="check-value">CIBIL Score 762</div></div>
+          <div class="check-status" style="color:var(--green);">✓</div>
+        </div>
+        <div class="check-item">
+          <div class="check-icon-wrap" style="background:rgba(0,196,140,0.12);">💼</div>
+          <div><div class="check-label">Employment</div><div class="check-value">Salaried · 3+ years</div></div>
+          <div class="check-status" style="color:var(--green);">✓</div>
+        </div>
+        <div class="check-item">
+          <div class="check-icon-wrap" style="background:rgba(0,196,140,0.12);">💰</div>
+          <div><div class="check-label">Monthly Income</div><div class="check-value">₹45,000+ pm</div></div>
+          <div class="check-status" style="color:var(--green);">✓</div>
+        </div>
+        <div class="check-item">
+          <div class="check-icon-wrap" style="background:rgba(0,196,140,0.12);">🏠</div>
+          <div><div class="check-label">Residence</div><div class="check-value">Own / Rented verified</div></div>
+          <div class="check-status" style="color:var(--green);">✓</div>
+        </div>
+      </div>
+      <div class="tag tag-green" style="margin:12px 0; display:block; text-align:center; padding:12px;">🎉 You are eligible for ₹1,00,000</div>
+      <button class="btn-primary" onclick="goto('screen-kyc')">Upload Documents →</button>
+    </div>
+  </div>
+
+  <!-- ============ KYC ============ -->
+  <div class="screen" id="screen-kyc">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="screen-header">
+      <div class="back-btn" onclick="goto('screen-eligibility')">←</div>
+      <div class="screen-header-title">KYC Verification</div>
+    </div>
+    <div class="scroll-content" style="padding:0 20px;">
+      <div class="text-xs" style="margin:8px 0 16px;">Complete KYC to proceed with your loan application</div>
+      <div class="card">
+        <div class="kyc-step">
+          <div class="kyc-step-num done">✓</div>
+          <div><div class="check-label">PAN Card</div><div class="check-value">ABCDE1234F · Verified</div></div>
+        </div>
+        <div class="kyc-step">
+          <div class="kyc-step-num done">✓</div>
+          <div><div class="check-label">Aadhaar Card</div><div class="check-value">XXXX XXXX 5678 · Linked</div></div>
+        </div>
+        <div class="kyc-step">
+          <div class="kyc-step-num active">3</div>
+          <div><div class="check-label">Bank Statement</div><div class="check-value">Last 6 months required</div></div>
+        </div>
+        <div class="kyc-step" style="border-bottom:none;">
+          <div class="kyc-step-num pending">4</div>
+          <div><div class="check-label">Selfie Verification</div><div class="check-value">Face match required</div></div>
+        </div>
+      </div>
+      <div class="card mt12" style="border:2px dashed rgba(0,212,255,0.3); text-align:center; cursor:pointer;" onclick="goto('screen-loanapproved')">
+        <div style="font-size:36px; margin-bottom:8px;">📎</div>
+        <div style="font-size:14px; font-weight:600; color:var(--accent);">Upload Bank Statement</div>
+        <div class="text-xs mt4">PDF or Image · Max 5MB</div>
+      </div>
+      <button class="btn-primary" style="margin-top:16px;" onclick="showLoading('screen-loanapproved')">Submit & Verify →</button>
+    </div>
+  </div>
+
+  <!-- ============ LOAN APPROVED ============ -->
+  <div class="screen" id="screen-loanapproved">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="success-container">
+      <div class="approval-confetti">🎉</div>
+      <div style="font-size:18px; font-weight:700; color:var(--text);">Loan Approved!</div>
+      <div class="approval-amount">₹1,00,000</div>
+      <div class="tag tag-green" style="margin-bottom:16px;">Disbursing in 2 hours</div>
+      <div class="card" style="width:100%; text-align:left;">
+        <div class="approval-detail"><div class="approval-detail-label">Interest Rate</div><div class="approval-detail-value">12% p.a.</div></div>
+        <div class="approval-detail"><div class="approval-detail-label">Tenure</div><div class="approval-detail-value">12 months</div></div>
+        <div class="approval-detail"><div class="approval-detail-label">Monthly EMI</div><div class="approval-detail-value">₹8,884</div></div>
+        <div class="approval-detail" style="border:none;"><div class="approval-detail-label">Disbursement A/C</div><div class="approval-detail-value">HDFC ••••4512</div></div>
+      </div>
+    </div>
+    <div style="padding:16px 20px; display:flex; flex-direction:column; gap:10px;">
+      <button class="btn-primary" onclick="goto('screen-loans')">View Loan Details</button>
+      <button class="btn-ghost" onclick="goto('screen-home')">Back to Home</button>
+    </div>
+  </div>
+
+  <!-- ============ BNPL ============ -->
+  <div class="screen" id="screen-bnpl">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="screen-header">
+      <div class="back-btn" onclick="goto('screen-loans')">←</div>
+      <div class="screen-header-title">Buy Now Pay Later</div>
+    </div>
+    <div class="scroll-content" style="padding:0 20px;">
+      <div class="loan-hero" style="background:linear-gradient(135deg,#1a0d2e,#2d1a4a); border-color:rgba(108,99,255,0.3);">
+        <div class="loan-hero-label">BNPL Limit</div>
+        <div class="loan-hero-amount" style="color:var(--accent2);">₹50,000</div>
+        <div class="loan-hero-sub">Available · 0% interest on 3 EMIs</div>
+      </div>
+      <div class="section-title">Shop at</div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <div style="background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:12px 16px; font-size:22px; cursor:pointer;">🛍️ Amazon</div>
+        <div style="background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:12px 16px; font-size:22px; cursor:pointer;">🔵 Flipkart</div>
+        <div style="background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:12px 16px; font-size:22px; cursor:pointer;">👗 Myntra</div>
+        <div style="background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:12px 16px; font-size:22px; cursor:pointer;">🍕 Zomato</div>
+      </div>
+      <div class="divider"></div>
+      <div class="section-title">Due Payments</div>
+      <div class="card">
+        <div class="txn-item"><div class="txn-icon" style="background:rgba(108,99,255,0.12);">🛍️</div><div><div class="txn-name">Amazon · EMI 1/3</div><div class="txn-meta">Due Dec 5, 2024</div></div><div class="txn-amount debit">-₹1,333</div></div>
+        <div class="txn-item" style="border:none;"><div class="txn-icon" style="background:rgba(255,77,109,0.12);">🔵</div><div><div class="txn-name">Flipkart · EMI 2/3</div><div class="txn-meta">Due Dec 12, 2024</div></div><div class="txn-amount debit">-₹2,000</div></div>
+      </div>
+      <button class="btn-primary" style="margin-top:12px;" onclick="goto('screen-applyloan')">Activate BNPL →</button>
+    </div>
+  </div>
+
+  <!-- ============ MICRO DRAMA ============ -->
+  <div class="screen" id="screen-drama">
+    <div class="status-bar" style="position:absolute; top:0; left:0; right:0; z-index:10; background:transparent;">
+      <span>9:30</span>
+      <div class="status-icons"><span>📶</span><span>🔋</span></div>
+    </div>
+    <div style="position:absolute; top:48px; left:0; right:0; z-index:10; display:flex; align-items:center; justify-content:space-between; padding:0 16px 12px;">
+      <div class="back-btn" onclick="goto('screen-home')" style="background:rgba(0,0,0,0.5); backdrop-filter:blur(10px);">←</div>
+      <div style="font-size:16px; font-weight:700; color:white;">🎬 Micro Drama</div>
+      <div style="background:rgba(0,0,0,0.5); backdrop-filter:blur(10px); border-radius:20px; padding:6px 12px; font-size:12px; font-weight:600; color:white; cursor:pointer;">🔍</div>
+    </div>
+    <div class="drama-feed" id="drama-feed">
+
+      <!-- Episode 1 -->
+      <div class="drama-episode" onclick="goto('screen-episode')">
+        <div class="drama-bg" style="background:linear-gradient(160deg, #1a0533, #3d0f70);">🌹</div>
+        <div class="drama-gradient"></div>
+        <div class="drama-side-actions">
+          <div class="drama-action"><div class="drama-action-icon">❤️</div><div class="drama-action-label">124K</div></div>
+          <div class="drama-action"><div class="drama-action-icon">💬</div><div class="drama-action-label">3.2K</div></div>
+          <div class="drama-action"><div class="drama-action-icon">↗️</div><div class="drama-action-label">Share</div></div>
+          <div class="drama-action"><div class="drama-action-icon">🔖</div><div class="drama-action-label">Save</div></div>
+        </div>
+        <div class="drama-info-box">
+          <div class="drama-ep-num">Episode 1 · Romance</div>
+          <div class="drama-ep-title">Love at First Swipe</div>
+          <div class="drama-ep-desc">She swiped right, but he already knew her secret...</div>
+          <div style="display:flex; gap:8px; margin-top:8px; align-items:center;">
+            <div style="width:24px; height:24px; background:linear-gradient(135deg,#FF6B6B,#FF4081); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:white;">D</div>
+            <div style="font-size:12px; color:rgba(255,255,255,0.7); font-family:var(--font2);">@DramaQueen</div>
+            <div style="background:rgba(255,255,255,0.2); border-radius:20px; padding:3px 10px; font-size:11px; font-weight:700; color:white; margin-left:4px; cursor:pointer;">Follow</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Episode 2 – Premium Locked -->
+      <div class="drama-episode" onclick="goto('screen-unlock')">
+        <div class="drama-bg" style="background:linear-gradient(160deg, #0d2137, #1a3a5c);">🏙️</div>
+        <div class="drama-gradient"></div>
+        <div style="position:absolute; inset:0; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px;">
+          <div style="font-size:40px;">🔒</div>
+          <div style="font-size:16px; font-weight:700; color:white;">Premium Episode</div>
+          <div style="font-size:13px; color:rgba(255,255,255,0.7); font-family:var(--font2);">Unlock for ₹9 only</div>
+          <div class="drama-unlock" style="margin-top:4px; padding:10px 20px;">
+            <div class="drama-unlock-title">🔓 Unlock Episode</div>
+            <div class="drama-unlock-price">₹9 · Watch forever</div>
+          </div>
+        </div>
+        <div class="drama-info-box">
+          <div class="drama-ep-num">Episode 2 · Romance</div>
+          <div class="drama-ep-title">The Secret Revealed</div>
+        </div>
+      </div>
+
+      <!-- Episode 3 -->
+      <div class="drama-episode" onclick="goto('screen-episode')">
+        <div class="drama-bg" style="background:linear-gradient(160deg, #1a2d0d, #2a4a15);">🌿</div>
+        <div class="drama-gradient"></div>
+        <div class="drama-side-actions">
+          <div class="drama-action"><div class="drama-action-icon">❤️</div><div class="drama-action-label">89K</div></div>
+          <div class="drama-action"><div class="drama-action-icon">💬</div><div class="drama-action-label">1.8K</div></div>
+          <div class="drama-action"><div class="drama-action-icon">↗️</div><div class="drama-action-label">Share</div></div>
+          <div class="drama-action"><div class="drama-action-icon">🔖</div><div class="drama-action-label">Save</div></div>
+        </div>
+        <div class="drama-info-box">
+          <div class="drama-ep-num">Episode 1 · Thriller</div>
+          <div class="drama-ep-title">The Missing Transfer</div>
+          <div class="drama-ep-desc">₹10 lakhs vanished overnight. Who transferred it?</div>
+        </div>
+      </div>
+    </div>
+
+                <div class="bottom-nav2">
+        <div class="nav2-item nav2-active" onclick="goto('screen-home')">
+          <div class="nav2-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M5 10.5L12 4L19 10.5V19H15V14H9V19H5V10.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" fill="none"/></svg>
+          </div>
+          <div class="nav2-label">Home</div>
+        </div>
+        <div class="nav2-item" onclick="goto('screen-loans')">
+          <div class="nav2-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3L20 7V12C20 16.4 16.5 20.5 12 21C7.5 20.5 4 16.4 4 12V7L12 3Z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linejoin="round"/><path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="nav2-label">Loans</div>
+        </div>
+        <div class="nav2-scan" onclick="goto('screen-scan')">
+          <div class="nav2-scan-ring"></div>
+          <div class="nav2-scan-ring nav2-scan-ring2"></div>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path d="M3 9V5.5C3 4.12 4.12 3 5.5 3H9" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M15 3H18.5C19.88 3 21 4.12 21 5.5V9" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M21 15V18.5C21 19.88 19.88 21 18.5 21H15" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M9 21H5.5C4.12 21 3 19.88 3 18.5V15" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+            <rect x="7" y="7" width="4" height="4" rx="0.8" fill="white"/>
+            <rect x="13" y="7" width="4" height="4" rx="0.8" fill="white"/>
+            <rect x="7" y="13" width="4" height="4" rx="0.8" fill="white"/>
+            <circle cx="15" cy="15" r="1.1" fill="white"/>
+            <circle cx="17.5" cy="15" r="1.1" fill="white"/>
+            <circle cx="15" cy="17.5" r="1.1" fill="white"/>
+            <circle cx="17.5" cy="17.5" r="1.1" fill="white"/>
+          </svg>
+          <div class="nav2-scan-label">Scan & Pay</div>
+        </div>
+        <div class="nav2-item" onclick="goto('screen-drama')">
+          <div class="nav2-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="2" y="6" width="20" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M2 10H22" stroke="currentColor" stroke-width="1.8"/><path d="M7 6V4M12 6V4M17 6V4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 13.5L15 16L10 18.5V13.5Z" fill="currentColor"/></svg>
+          </div>
+          <div class="nav2-label">Drama</div>
+        </div>
+        <div class="nav2-item" onclick="goto('screen-profile')">
+          <div class="nav2-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M5 20C5 16.7 8.1 14 12 14C15.9 14 19 16.7 19 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>
+          </div>
+          <div class="nav2-label">Profile</div>
+        </div>
+      </div>
+  </div>
+
+  <!-- ============ EPISODE PLAYER ============ -->
+  <div class="screen" id="screen-episode">
+    <div style="flex:1; background:linear-gradient(160deg,#1a0533,#3d0f70); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:16px; position:relative;">
+      <div style="position:absolute; top:56px; left:16px; z-index:10;">
+        <div class="back-btn" onclick="goto('screen-drama')" style="background:rgba(0,0,0,0.5);">←</div>
+      </div>
+      <div style="font-size:80px;">🌹</div>
+      <div style="text-align:center; padding:0 32px;">
+        <div style="font-size:20px; font-weight:800; color:white;">Love at First Swipe</div>
+        <div style="font-size:14px; color:rgba(255,255,255,0.6); font-family:var(--font2); margin-top:4px;">Episode 1 · 4 min</div>
+      </div>
+      <!-- Progress bar -->
+      <div style="width:80%; height:4px; background:rgba(255,255,255,0.2); border-radius:2px; overflow:hidden;">
+        <div style="width:35%; height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2));"></div>
+      </div>
+      <!-- Controls -->
+      <div style="display:flex; gap:24px; align-items:center;">
+        <div style="font-size:28px; cursor:pointer;">⏮️</div>
+        <div style="width:64px; height:64px; background:linear-gradient(135deg,var(--accent),var(--accent2)); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:28px; cursor:pointer; box-shadow:0 8px 24px rgba(0,212,255,0.3);" onclick="goto('screen-unlock')">▶️</div>
+        <div style="font-size:28px; cursor:pointer;" onclick="goto('screen-unlock')">⏭️</div>
+      </div>
+    </div>
+    <div style="background:#000; padding:16px 20px; display:flex; gap:12px; justify-content:center;">
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer;"><div style="font-size:24px;">❤️</div><div style="font-size:11px; color:rgba(255,255,255,0.6); font-family:var(--font2);">124K</div></div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer;"><div style="font-size:24px;">💬</div><div style="font-size:11px; color:rgba(255,255,255,0.6); font-family:var(--font2);">3.2K</div></div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer;"><div style="font-size:24px;">↗️</div><div style="font-size:11px; color:rgba(255,255,255,0.6); font-family:var(--font2);">Share</div></div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer;" onclick="goto('screen-unlock')"><div style="font-size:24px;">⏭️</div><div style="font-size:11px; color:rgba(255,255,255,0.6); font-family:var(--font2);">Next Ep</div></div>
+    </div>
+  </div>
+
+  <!-- ============ UNLOCK EPISODE ============ -->
+  <div class="screen" id="screen-unlock">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="screen-header">
+      <div class="back-btn" onclick="goto('screen-drama')">←</div>
+      <div class="screen-header-title">Unlock Episode</div>
+    </div>
+    <div class="scroll-content" style="padding:0 20px;">
+      <div style="text-align:center; padding:28px 0;">
+        <div style="font-size:60px; margin-bottom:12px;">🔒</div>
+        <div style="font-size:22px; font-weight:800; color:var(--text);">Episode 2</div>
+        <div style="font-size:14px; color:var(--text2); font-family:var(--font2); margin-top:4px;">The Secret Revealed</div>
+      </div>
+      <div class="card" style="text-align:center; margin-bottom:12px;">
+        <div style="font-size:36px; font-weight:800; color:var(--gold);">₹9</div>
+        <div class="text-xs mt4">One-time unlock · Watch forever</div>
+      </div>
+      <div class="card" style="margin-bottom:12px;">
+        <div style="font-size:14px; font-weight:700; color:var(--text); margin-bottom:8px;">Or get Drama Pass</div>
+        <div class="flex-between">
+          <div><div class="text-md">Weekly Pass</div><div class="text-xs mt4">All episodes · 7 days</div></div>
+          <div class="tag tag-gold">₹29</div>
+        </div>
+        <div class="divider"></div>
+        <div class="flex-between">
+          <div><div class="text-md">Monthly Pass</div><div class="text-xs mt4">All episodes · 30 days</div></div>
+          <div class="tag tag-green">₹79</div>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="showLoading('screen-drama')">Unlock for ₹9 →</button>
+      <button class="btn-ghost" style="margin-top:10px;" onclick="showLoading('screen-drama')">Get Monthly Pass ₹79</button>
+    </div>
+  </div>
+
+  <!-- ============ REWARDS ============ -->
+  <div class="screen" id="screen-rewards">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="screen-header">
+      <div class="back-btn" onclick="goto('screen-home')">←</div>
+      <div class="screen-header-title">Rewards & Cashback</div>
+    </div>
+    <div class="scroll-content" style="padding:0 20px;">
+      <div class="reward-hero">
+        <div class="text-xs">Total Coins Earned</div>
+        <div class="reward-coins">🪙 4,280</div>
+        <div class="tag tag-gold">≈ ₹42.80 cashback</div>
+        <button class="btn-primary" style="margin-top:12px;" onclick="goto('screen-redeem')">Redeem Now →</button>
+      </div>
+
+      <div class="section-title">Scratch Cards 🎴</div>
+      <div class="scratch-cards-grid">
+        <div class="scratch-card" onclick="showScratch(this)">
+          <div style="font-size:32px;">🎴</div>
+          <div style="font-size:13px; font-weight:600; color:var(--gold);">Scratch Me!</div>
+          <div style="font-size:11px; color:var(--text2); font-family:var(--font2);">Win up to ₹100</div>
+        </div>
+        <div class="scratch-card" onclick="showScratch(this)">
+          <div style="font-size:32px;">🎴</div>
+          <div style="font-size:13px; font-weight:600; color:var(--gold);">Scratch Me!</div>
+          <div style="font-size:11px; color:var(--text2); font-family:var(--font2);">Win up to ₹50</div>
+        </div>
+        <div class="scratch-card" style="opacity:0.5;">
+          <div style="font-size:32px;">🔒</div>
+          <div style="font-size:11px; color:var(--text2); font-family:var(--font2);">Pay ₹500+ to unlock</div>
+        </div>
+        <div class="scratch-card" style="opacity:0.5;">
+          <div style="font-size:32px;">🔒</div>
+          <div style="font-size:11px; color:var(--text2); font-family:var(--font2);">Refer a friend to unlock</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="section-title">Referral Program 🎁</div>
+      <div class="refer-card">
+        <div class="text-xs" style="margin-bottom:4px;">YOUR REFERRAL CODE</div>
+        <div class="refer-code">ARJUN500</div>
+        <div class="text-xs">Share & earn ₹50 for each referral</div>
+        <button class="btn-primary" style="margin-top:12px;">Share Code 🔗</button>
+      </div>
+
+      <div class="section-title">Cashback History</div>
+      <div class="card">
+        <div class="txn-item"><div class="txn-icon" style="background:rgba(0,196,140,0.12);">💚</div><div><div class="txn-name">Bill Payment Cashback</div><div class="txn-meta">Dec 1, 2024</div></div><div class="txn-amount credit">+₹15</div></div>
+        <div class="txn-item"><div class="txn-icon" style="background:rgba(255,184,0,0.12);">🪙</div><div><div class="txn-name">Referral Bonus</div><div class="txn-meta">Nov 28, 2024</div></div><div class="txn-amount credit">+₹50</div></div>
+        <div class="txn-item" style="border:none;"><div class="txn-icon" style="background:rgba(0,212,255,0.12);">🎁</div><div><div class="txn-name">Scratch Card Win</div><div class="txn-meta">Nov 25, 2024</div></div><div class="txn-amount credit">+₹25</div></div>
+      </div>
+      <div style="height:20px;"></div>
+    </div>
+  </div>
+
+  <!-- ============ REDEEM ============ -->
+  <div class="screen" id="screen-redeem">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="screen-header">
+      <div class="back-btn" onclick="goto('screen-rewards')">←</div>
+      <div class="screen-header-title">Redeem Rewards</div>
+    </div>
+    <div class="scroll-content" style="padding:0 20px;">
+      <div class="card mt16" style="text-align:center;">
+        <div style="font-size:40px; margin-bottom:8px;">🪙</div>
+        <div style="font-size:32px; font-weight:800; color:var(--gold);">4,280 Coins</div>
+        <div class="text-xs mt4">= ₹42.80 cashback</div>
+      </div>
+      <div class="section-title" style="margin-top:16px;">Redeem To</div>
+      <div class="provider-item" onclick="showLoading('screen-home')">
+        <div class="provider-icon" style="background:rgba(0,196,140,0.12);">💳</div>
+        <div><div class="provider-name">Wallet Balance</div><div class="text-xs mt4">Instant credit</div></div>
+        <div class="chevron">›</div>
+      </div>
+      <div class="provider-item" onclick="showLoading('screen-home')">
+        <div class="provider-icon" style="background:rgba(0,212,255,0.12);">🏦</div>
+        <div><div class="provider-name">Bank Account</div><div class="text-xs mt4">2-3 working days</div></div>
+        <div class="chevron">›</div>
+      </div>
+      <button class="btn-primary" style="margin-top:16px;" onclick="showLoading('screen-home')">Redeem ₹42.80 →</button>
+    </div>
+  </div>
+
+  <!-- ============ OFFERS ============ -->
+  <div class="screen" id="screen-offers">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="screen-header">
+      <div class="back-btn" onclick="goto('screen-home')">←</div>
+      <div class="screen-header-title">Offers & Deals</div>
+    </div>
+    <div class="scroll-content" style="padding:0 20px;">
+      <div class="offers-hero">
+        <div style="font-size:36px; margin-bottom:8px;">🎉</div>
+        <div style="font-size:20px; font-weight:800; color:var(--text);">₹127 saved this month!</div>
+        <div class="text-xs mt4">Keep transacting to earn more rewards</div>
+      </div>
+      <div class="section-title">All Offers</div>
+      <div class="offer-list-card">
+        <div class="offer-list-icon" style="background:rgba(255,184,0,0.12);">⚡</div>
+        <div>
+          <div class="text-md">₹50 on Electricity Bill</div>
+          <div class="text-xs mt4">Valid till Dec 31 · First bill payment</div>
+        </div>
+        <div class="offer-badge">₹50</div>
+      </div>
+      <div class="offer-list-card">
+        <div class="offer-list-icon" style="background:rgba(0,196,140,0.12);">💚</div>
+        <div>
+          <div class="text-md">2x Coins on UPI</div>
+          <div class="text-xs mt4">Today only · All UPI transactions</div>
+        </div>
+        <div class="offer-badge">2x</div>
+      </div>
+      <div class="offer-list-card">
+        <div class="offer-list-icon" style="background:rgba(108,99,255,0.12);">🏦</div>
+        <div>
+          <div class="text-md">Pre-approved Loan ₹50K</div>
+          <div class="text-xs mt4">Instant approval · 12% p.a.</div>
+        </div>
+        <div class="offer-badge" style="color:var(--accent2);">Apply</div>
+      </div>
+      <div class="offer-list-card">
+        <div class="offer-list-icon" style="background:rgba(0,212,255,0.12);">📱</div>
+        <div>
+          <div class="text-md">₹20 on Recharge</div>
+          <div class="text-xs mt4">Min ₹299 recharge · Once per user</div>
+        </div>
+        <div class="offer-badge">₹20</div>
+      </div>
+      <div class="offer-list-card">
+        <div class="offer-list-icon" style="background:rgba(255,77,109,0.12);">🎬</div>
+        <div>
+          <div class="text-md">Free Drama Pass</div>
+          <div class="text-xs mt4">Pay ₹1000+ to unlock free weekly pass</div>
+        </div>
+        <div class="offer-badge" style="color:var(--red);">Free</div>
+      </div>
+      <div style="height:20px;"></div>
+    </div>
+  </div>
+
+  <!-- ============ PROFILE ============ -->
+  <div class="screen" id="screen-profile">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="scroll-content">
+      <div class="profile-hero" style="position:relative;overflow:hidden;"><div style="position:absolute;top:12px;right:16px;"><div class="fp-logo-icon" style="width:32px;height:32px;border-radius:9px;opacity:0.5;"><svg width="20" height="20" viewBox="0 0 60 60" fill="none"><path d="M12 10 L12 50 M12 10 L30 10 Q38 10 38 18 Q38 26 30 26 L12 26 M12 30 L26 30" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M32 26 L32 50 M32 26 L44 26 Q52 26 52 36 Q52 46 44 46 L32 46" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div></div>
+        <div class="profile-avatar">A</div>
+        <div class="profile-name">Arjun Sharma</div>
+        <div class="profile-phone">+91 98765 43210 · arjun@finshell</div>
+        <div class="profile-badges">
+          <div class="tag tag-green">✓ KYC Verified</div>
+          <div class="tag tag-blue">⭐ Premium</div>
+        </div>
+      </div>
+      <div class="profile-menu">
+        <div class="profile-menu-item" onclick="goto('screen-bankaccounts')">
+          <div class="profile-menu-icon" style="background:rgba(0,212,255,0.12);">🏦</div>
+          <div><div class="profile-menu-label">Bank Accounts</div><div class="profile-menu-sub">2 accounts linked</div></div>
+          <div class="chevron" style="margin-left:auto;">›</div>
+        </div>
+        <div class="profile-menu-item" onclick="goto('screen-kyc')">
+          <div class="profile-menu-icon" style="background:rgba(0,196,140,0.12);">✅</div>
+          <div><div class="profile-menu-label">KYC Status</div><div class="profile-menu-sub">Fully verified</div></div>
+          <div class="chevron" style="margin-left:auto;">›</div>
+        </div>
+        <div class="profile-menu-item" onclick="goto('screen-txnhistory')">
+          <div class="profile-menu-icon" style="background:rgba(108,99,255,0.12);">📊</div>
+          <div><div class="profile-menu-label">Transaction History</div><div class="profile-menu-sub">View all payments</div></div>
+          <div class="chevron" style="margin-left:auto;">›</div>
+        </div>
+        <div class="profile-menu-item" onclick="goto('screen-rewards')">
+          <div class="profile-menu-icon" style="background:rgba(255,184,0,0.12);">🎁</div>
+          <div><div class="profile-menu-label">Rewards & Cashback</div><div class="profile-menu-sub">4,280 coins · ₹42.80</div></div>
+          <div class="chevron" style="margin-left:auto;">›</div>
+        </div>
+        <div class="profile-menu-item" onclick="goto('screen-settings')">
+          <div class="profile-menu-icon" style="background:rgba(0,180,216,0.12);">⚙️</div>
+          <div><div class="profile-menu-label">Settings</div><div class="profile-menu-sub">Privacy, Notifications</div></div>
+          <div class="chevron" style="margin-left:auto;">›</div>
+        </div>
+        <div class="profile-menu-item" onclick="goto('screen-help')">
+          <div class="profile-menu-icon" style="background:rgba(255,77,109,0.12);">❓</div>
+          <div><div class="profile-menu-label">Help & Support</div><div class="profile-menu-sub">24/7 live chat support</div></div>
+          <div class="chevron" style="margin-left:auto;">›</div>
+        </div>
+        <div class="profile-menu-item" onclick="goto('screen-login')" style="border:none;">
+          <div class="profile-menu-icon" style="background:rgba(255,77,109,0.12);">🚪</div>
+          <div><div class="profile-menu-label" style="color:var(--red);">Logout</div></div>
+          <div class="chevron" style="margin-left:auto; color:var(--red);">›</div>
+        </div>
+      </div>
+    </div>
+                      <div class="bottom-nav2">
+        <div class="nav2-item nav2-active" onclick="goto('screen-home')">
+          <div class="nav2-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M5 10.5L12 4L19 10.5V19H15V14H9V19H5V10.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" fill="none"/></svg>
+          </div>
+          <div class="nav2-label">Home</div>
+        </div>
+        <div class="nav2-item" onclick="goto('screen-loans')">
+          <div class="nav2-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3L20 7V12C20 16.4 16.5 20.5 12 21C7.5 20.5 4 16.4 4 12V7L12 3Z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linejoin="round"/><path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="nav2-label">Loans</div>
+        </div>
+        <div class="nav2-scan" onclick="goto('screen-scan')">
+          <div class="nav2-scan-ring"></div>
+          <div class="nav2-scan-ring nav2-scan-ring2"></div>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path d="M3 9V5.5C3 4.12 4.12 3 5.5 3H9" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M15 3H18.5C19.88 3 21 4.12 21 5.5V9" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M21 15V18.5C21 19.88 19.88 21 18.5 21H15" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M9 21H5.5C4.12 21 3 19.88 3 18.5V15" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+            <rect x="7" y="7" width="4" height="4" rx="0.8" fill="white"/>
+            <rect x="13" y="7" width="4" height="4" rx="0.8" fill="white"/>
+            <rect x="7" y="13" width="4" height="4" rx="0.8" fill="white"/>
+            <circle cx="15" cy="15" r="1.1" fill="white"/>
+            <circle cx="17.5" cy="15" r="1.1" fill="white"/>
+            <circle cx="15" cy="17.5" r="1.1" fill="white"/>
+            <circle cx="17.5" cy="17.5" r="1.1" fill="white"/>
+          </svg>
+          <div class="nav2-scan-label">Scan & Pay</div>
+        </div>
+        <div class="nav2-item" onclick="goto('screen-drama')">
+          <div class="nav2-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="2" y="6" width="20" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M2 10H22" stroke="currentColor" stroke-width="1.8"/><path d="M7 6V4M12 6V4M17 6V4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 13.5L15 16L10 18.5V13.5Z" fill="currentColor"/></svg>
+          </div>
+          <div class="nav2-label">Drama</div>
+        </div>
+        <div class="nav2-item" onclick="goto('screen-profile')">
+          <div class="nav2-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M5 20C5 16.7 8.1 14 12 14C15.9 14 19 16.7 19 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>
+          </div>
+          <div class="nav2-label">Profile</div>
+        </div>
+      </div>
+  </div>
+
+  <!-- ============ BANK ACCOUNTS ============ -->
+  <div class="screen" id="screen-bankaccounts">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="screen-header">
+      <div class="back-btn" onclick="goto('screen-profile')">←</div>
+      <div class="screen-header-title">Bank Accounts</div>
+    </div>
+    <div class="scroll-content" style="padding:0 20px;">
+      <div class="card mt16">
+        <div class="flex-between" style="margin-bottom:12px;"><div class="text-md">HDFC Bank</div><div class="tag tag-blue">Primary</div></div>
+        <div class="text-xs">Account Number</div>
+        <div style="font-size:16px; font-weight:700; color:var(--text); margin-top:2px; font-family:var(--font2);">•••• •••• 4512</div>
+        <div class="flex-between mt12"><div><div class="text-xs">IFSC Code</div><div style="font-size:13px; font-weight:600; color:var(--text); margin-top:2px; font-family:var(--font2);">HDFC0001234</div></div><div><div class="text-xs">Type</div><div style="font-size:13px; font-weight:600; color:var(--text); margin-top:2px; font-family:var(--font2);">Savings</div></div></div>
+      </div>
+      <div class="card mt10">
+        <div class="flex-between" style="margin-bottom:12px;"><div class="text-md">SBI Bank</div><div></div></div>
+        <div class="text-xs">Account Number</div>
+        <div style="font-size:16px; font-weight:700; color:var(--text); margin-top:2px; font-family:var(--font2);">•••• •••• 8834</div>
+        <div class="flex-between mt12"><div><div class="text-xs">IFSC Code</div><div style="font-size:13px; font-weight:600; color:var(--text); margin-top:2px; font-family:var(--font2);">SBIN0005678</div></div><div><div class="text-xs">Type</div><div style="font-size:13px; font-weight:600; color:var(--text); margin-top:2px; font-family:var(--font2);">Savings</div></div></div>
+      </div>
+      <button class="btn-ghost" style="margin-top:16px;">+ Add Bank Account</button>
+    </div>
+  </div>
+
+  <!-- ============ SETTINGS ============ -->
+  <div class="screen" id="screen-settings">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="screen-header">
+      <div class="back-btn" onclick="goto('screen-profile')">←</div>
+      <div class="screen-header-title">Settings</div>
+    </div>
+    <div class="scroll-content">
+      <div class="profile-menu">
+        <div class="profile-menu-item"><div class="profile-menu-icon" style="background:rgba(0,212,255,0.12);">🔔</div><div><div class="profile-menu-label">Notifications</div><div class="profile-menu-sub">Payments, offers, alerts</div></div><div style="margin-left:auto; width:44px; height:24px; background:var(--accent); border-radius:12px; position:relative; cursor:pointer;"><div style="position:absolute; right:2px; top:2px; width:20px; height:20px; background:white; border-radius:50%;"></div></div></div>
+        <div class="profile-menu-item"><div class="profile-menu-icon" style="background:rgba(108,99,255,0.12);">🔒</div><div><div class="profile-menu-label">Security & Privacy</div><div class="profile-menu-sub">PIN, Biometrics</div></div><div class="chevron" style="margin-left:auto;">›</div></div>
+        <div class="profile-menu-item"><div class="profile-menu-icon" style="background:rgba(0,196,140,0.12);">🌙</div><div><div class="profile-menu-label">Dark Mode</div><div class="profile-menu-sub">Always on</div></div><div style="margin-left:auto; width:44px; height:24px; background:var(--accent); border-radius:12px; position:relative; cursor:pointer;"><div style="position:absolute; right:2px; top:2px; width:20px; height:20px; background:white; border-radius:50%;"></div></div></div>
+        <div class="profile-menu-item"><div class="profile-menu-icon" style="background:rgba(255,184,0,0.12);">🌐</div><div><div class="profile-menu-label">Language</div><div class="profile-menu-sub">English</div></div><div class="chevron" style="margin-left:auto;">›</div></div>
+        <div class="profile-menu-item" style="border:none;"><div class="profile-menu-icon" style="background:rgba(0,212,255,0.12);">ℹ️</div><div><div class="profile-menu-label">App Version</div><div class="profile-menu-sub">v2.4.1 · Up to date</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ HELP ============ -->
+  <div class="screen" id="screen-help">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="screen-header">
+      <div class="back-btn" onclick="goto('screen-profile')">←</div>
+      <div class="screen-header-title">Help & Support</div>
+    </div>
+    <div class="scroll-content" style="padding:0 20px;">
+      <div class="card mt16" style="text-align:center; padding:24px;">
+        <div style="font-size:40px; margin-bottom:8px;">💬</div>
+        <div style="font-size:16px; font-weight:700; color:var(--text);">24/7 Live Support</div>
+        <div class="text-xs mt4">Average response time: 2 mins</div>
+        <button class="btn-primary" style="margin-top:16px;" onclick="goto('screen-home')">Start Chat</button>
+      </div>
+      <div class="section-title" style="margin-top:16px;">FAQs</div>
+      <div class="provider-item" onclick="goto('screen-home')"><div class="provider-icon" style="background:rgba(255,184,0,0.12);">❓</div><div class="provider-name">How to send money?</div><div class="chevron">›</div></div>
+      <div class="provider-item" onclick="goto('screen-home')"><div class="provider-icon" style="background:rgba(0,212,255,0.12);">🔒</div><div class="provider-name">How to reset UPI PIN?</div><div class="chevron">›</div></div>
+      <div class="provider-item" onclick="goto('screen-home')"><div class="provider-icon" style="background:rgba(0,196,140,0.12);">💰</div><div class="provider-name">Cashback not received?</div><div class="chevron">›</div></div>
+      <div class="provider-item" onclick="goto('screen-home')"><div class="provider-icon" style="background:rgba(108,99,255,0.12);">🏦</div><div class="provider-name">Loan application status</div><div class="chevron">›</div></div>
+    </div>
+  </div>
+
+  <!-- ============ PAYMENT FAILED ============ -->
+  <div class="screen" id="screen-payfailed">
+    <div class="status-bar"><span>9:30</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+    <div class="success-container">
+      <div class="error-ring">❌</div>
+      <div class="success-title">Payment Failed</div>
+      <div class="success-amount" style="color:var(--red);">₹500.00</div>
+      <div class="success-sub">Transaction declined by bank</div>
+      <div class="success-txn-id">Error: Insufficient balance</div>
+      <div style="margin-top:8px;"><div class="tag tag-red">Amount will be refunded in 3-5 days</div></div>
+    </div>
+    <div style="padding:16px 20px; display:flex; flex-direction:column; gap:10px;">
+      <button class="btn-primary" onclick="goto('screen-enteramount')">Try Again</button>
+      <button class="btn-ghost" onclick="goto('screen-home')">Back to Home</button>
+    </div>
+  </div>
+
+</div><!-- /phone-shell -->
+
+<script>
+  // ============ CORE NAVIGATION ============
+  function goto(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const target = document.getElementById(id);
+    if (!target) return;
+    target.classList.add('active');
+
+    // Scroll to top
+    const scroll = target.querySelector('.scroll-content');
+    if (scroll) scroll.scrollTop = 0;
+    const feed = target.querySelector('.drama-feed');
+    if (feed) feed.scrollTop = 0;
+
+    // Re-trigger animations
+    const animated = target.querySelectorAll('.card, .txn-item, .loan-card, .offer-list-card, .kyc-step, .check-item');
+    animated.forEach(el => {
+      el.style.animation = 'none';
+      void el.offsetHeight;
+      el.style.animation = '';
+    });
+
+    // Progress bars
+    target.querySelectorAll('.progress-bar').forEach(el => {
+      const w = el.getAttribute('data-width') || el.style.width;
+      if (!el.getAttribute('data-width')) el.setAttribute('data-width', w);
+      el.style.width = '0';
+      void el.offsetHeight;
+      el.style.width = w;
+    });
+
+    // Home-specific
+    if (id === 'screen-home') {
+      setTimeout(staggerQuickActions, 100);
+      setTimeout(animateWalletBalance, 300);
+    }
+  }
+
+  // ============ LOADING TRANSITION ============
+  function showLoading(targetScreen) {
+    const current = document.querySelector('.screen.active');
+    if (!current) { goto(targetScreen); return; }
+    const overlay = document.createElement('div');
+    overlay.className = 'loading-overlay';
+    overlay.innerHTML = `
+      <div class="spinner"></div>
+      <div style="font-size:13px;color:var(--text2);font-family:var(--font2);margin-top:4px;">Processing...</div>
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        <div style="width:6px;height:6px;background:var(--accent);border-radius:50%;animation:dotBounce 0.8s ease 0s infinite alternate;"></div>
+        <div style="width:6px;height:6px;background:var(--accent);border-radius:50%;animation:dotBounce 0.8s ease 0.15s infinite alternate;"></div>
+        <div style="width:6px;height:6px;background:var(--accent);border-radius:50%;animation:dotBounce 0.8s ease 0.3s infinite alternate;"></div>
+      </div>`;
+    current.appendChild(overlay);
+    setTimeout(() => { overlay.remove(); goto(targetScreen); }, 1400);
+  }
+
+  // ============ PIN INPUT ============
+  let pinValue = [];
+  function pinInput(num) {
+    if (pinValue.length < 6) {
+      pinValue.push(num);
+      updatePinDots();
+      if (pinValue.length === 6) {
+        setTimeout(() => { pinValue = []; updatePinDots(); goto('screen-notifications'); }, 400);
+      }
+    }
+  }
+  function pinDelete() { pinValue.pop(); updatePinDots(); }
+  function updatePinDots() {
+    for (let i = 1; i <= 6; i++) {
+      const dot = document.getElementById('pd' + i);
+      if (!dot) continue;
+      if (i <= pinValue.length) {
+        dot.classList.add('filled');
+        dot.style.animation = 'none'; void dot.offsetHeight; dot.style.animation = '';
+      } else {
+        dot.classList.remove('filled');
+      }
+    }
+  }
+
+  // ============ SCRATCH CARD ============
+  function showScratch(el) {
+    const wins = ['₹25 🎉', '₹10 🎊', '₹50 💰', 'Better luck! 😊'];
+    const win = wins[Math.floor(Math.random() * wins.length)];
+    el.style.animation = 'scratchReveal 0.4s cubic-bezier(0.34,1.4,0.64,1) both';
+    el.innerHTML = `<div style="font-size:22px;font-weight:800;color:var(--gold);">${win}</div>`;
+    el.style.background = 'linear-gradient(135deg,#0d2b1a,#1a4a2a)';
+    el.style.borderColor = 'rgba(0,196,140,0.4)';
+  }
+
+  // ============ WALLET BALANCE COUNTER ============
+  function animateWalletBalance() {
+    const balEl = document.querySelector('#screen-home .wallet-balance');
+    if (!balEl) return;
+    const target = 12480;
+    let current = 0;
+    const step = target / 35;
+    balEl.innerHTML = '<span>₹</span>0';
+    const timer = setInterval(() => {
+      current = Math.min(current + step, target);
+      balEl.innerHTML = '<span>₹</span>' + Math.floor(current).toLocaleString('en-IN') + '<span style="font-size:20px;opacity:0.7;">.50</span>';
+      if (current >= target) clearInterval(timer);
+    }, 25);
+  }
+
+  // ============ QUICK ACTIONS STAGGER ============
+  function staggerQuickActions() {
+    document.querySelectorAll('#screen-home .quick-action').forEach((el, i) => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(18px) scale(0.88)';
+      setTimeout(() => {
+        el.style.transition = 'all 0.38s cubic-bezier(0.34,1.4,0.64,1)';
+        el.style.opacity = '1';
+        el.style.transform = 'translateY(0) scale(1)';
+        setTimeout(() => { el.style.transition = ''; }, 400);
+      }, 350 + i * 55);
+    });
+  }
+
+  // ============ PARTICLE SPAWNER (SPLASH) ============
+  function spawnParticles() {
+    const splash = document.getElementById('screen-splash');
+    if (!splash) return;
+    const colors = ['rgba(0,212,255,0.7)','rgba(108,99,255,0.7)','rgba(0,196,140,0.6)','rgba(255,184,0,0.5)'];
+    setInterval(() => {
+      if (!splash.classList.contains('active')) return;
+      const p = document.createElement('div');
+      const size = Math.random() * 6 + 3;
+      p.style.cssText = `position:absolute;border-radius:50%;width:${size}px;height:${size}px;background:${colors[Math.floor(Math.random()*colors.length)]};left:${Math.random()*100}%;bottom:${Math.random()*15+5}%;opacity:0;animation:particleFloat ${Math.random()*3+3}s linear forwards;pointer-events:none;`;
+      splash.appendChild(p);
+      setTimeout(() => p.remove(), 6500);
+    }, 350);
+  }
+
+  // ============ BUTTON PRESS EFFECT ============
+  document.addEventListener('pointerdown', e => {
+    const btn = e.target.closest('.btn-primary,.btn-ghost,.nav-scan,.quick-action,.loan-card,.pay-option,.bill-item,.drama-action-icon');
+    if (!btn) return;
+    btn.style.transition = 'transform 0.1s ease';
+    btn.style.transform = btn.classList.contains('nav-scan') ? 'scale(0.88)' : 'scale(0.96)';
+  });
+  document.addEventListener('pointerup', e => {
+    const btn = e.target.closest('.btn-primary,.btn-ghost,.nav-scan,.quick-action,.loan-card,.pay-option,.bill-item,.drama-action-icon');
+    if (!btn) return;
+    btn.style.transition = 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+    btn.style.transform = '';
+    setTimeout(() => btn.style.transition = '', 350);
+  });
+
+  // ============ DRAMA LIKE EFFECT ============
+  document.querySelectorAll('.drama-action-icon').forEach(icon => {
+    icon.addEventListener('click', function(e) {
+      e.stopPropagation();
+      this.style.animation = 'none';
+      void this.offsetHeight;
+      this.style.animation = 'likeHeart 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+    });
+  });
+
+  // ============ RIPPLE EFFECT ============
+  document.querySelectorAll('.btn-primary,.btn-ghost').forEach(el => {
+    el.addEventListener('click', function(e) {
+      const ripple = document.createElement('div');
+      const rect = this.getBoundingClientRect();
+      ripple.style.cssText = `position:absolute;width:40px;height:40px;background:rgba(255,255,255,0.18);border-radius:50%;transform:translate(-50%,-50%) scale(0);animation:rippleAnim 0.55s ease;pointer-events:none;left:${e.clientX - rect.left}px;top:${e.clientY - rect.top}px;`;
+      const old = this.style.position;
+      this.style.position = 'relative';
+      this.style.overflow = 'hidden';
+      this.appendChild(ripple);
+      setTimeout(() => { ripple.remove(); this.style.position = old; }, 560);
+    });
+  });
+
+  // ============ EXTRA ANIMATION KEYFRAMES ============
+  const extraStyle = document.createElement('style');
+  extraStyle.textContent = `
+    @keyframes rippleAnim { to { transform:translate(-50%,-50%) scale(7); opacity:0; } }
+    @keyframes dotBounce { from{transform:translateY(0);opacity:0.4;} to{transform:translateY(-8px);opacity:1;} }
+    @keyframes scratchReveal { from{transform:scale(0.8);opacity:0;} to{transform:scale(1);opacity:1;} }
+    @keyframes likeHeart { 0%{transform:scale(1);} 50%{transform:scale(1.5);} 100%{transform:scale(1);} }
+  `;
+  document.head.appendChild(extraStyle);
+
+  // ============ INTERSECTION OBSERVER (scroll reveal) ============
+  const revealObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('.offer-list-card').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(16px)';
+    el.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+    revealObserver.observe(el);
+  });
+
+  // ============ AUTO SPLASH → LOGIN ============
+  setTimeout(() => goto('screen-login'), 2600);
+
+  // ============ PHONE SCALING ============
+  function scalePhone() {
+    const shell = document.querySelector('.phone-shell');
+    if (!shell) return;
+    const scaleX = window.innerWidth / (393 + 40);
+    const scaleY = window.innerHeight / (852 + 40);
+    shell.style.transform = `scale(${Math.min(scaleX, scaleY, 1)})`;
+  }
+  scalePhone();
+  window.addEventListener('resize', scalePhone);
+
+  // ============ INIT ============
+  spawnParticles();
+  staggerQuickActions();
+</script>
+</div><!-- /phone-wrapper -->
+</body>
+</html>
